@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -14,17 +15,16 @@ import (
 func main() {
 	args := goutil.ReadArgs()
 
-	src := args.Get("./src", "src")
-	dist := args.Get("./html.exs", "dist") //todo: use folder name as default file name, and keep in same folder
-	root := args.Get("./", "root", "")
+	src := args.Get("./src", "src", "root", "")
+	dist := args.Get("", "dist", "output", "out", "o")
 	port := args.Get("", "port", "")
 
-	if !regex.Comp(`^[3-6][0-9]{3,4}$`).Match([]byte(port)) && regex.Comp(`^[3-6][0-9]{3,4}$`).Match([]byte(root)) {
-		goutil.Swap(&root, &port)
+	if !regex.Comp(`^[0-9]{4,5}$`).Match([]byte(port)) && regex.Comp(`^[0-9]{4,5}$`).Match([]byte(src)) {
+		goutil.Swap(&src, &port)
 	}
 
-	if err := goutil.AppendRoot(root, &src, &dist); err != nil {
-		panic(err)
+	if dist == "" {
+		goutil.JoinPath(src, filepath.Base(src)+".exs")
 	}
 
 	if !strings.HasSuffix(dist, ".exs") {
