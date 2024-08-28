@@ -1,7 +1,7 @@
 # HTMLC (HTML Conpiler)
 
 Compiles HTML to Elixir.
-Who said HTML is not a programming language?
+Who says HTML is not a programming language?
 
 This module is actually just another templating engine (and a really fast one).
 
