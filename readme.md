@@ -5,6 +5,8 @@ Who said HTML is not a programming language?
 
 This module is actually just another templating engine (and a really fast one).
 
+![meme](./assets/dm-meme-html-compiler.jpg)
+
 ## Installation
 
 ```shell
