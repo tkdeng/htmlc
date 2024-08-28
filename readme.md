@@ -1,4 +1,4 @@
-# HTMLC (HTML Conpiler)
+# HTMLC (HTML Compiler)
 
 Compiles HTML to Elixir.
 Who says HTML is not a programming language?
