@@ -97,6 +97,9 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 					} else if dirType == 'p' || dirType == 'e' {
 						buf_page := map[string][]byte{}
 
+						//todo: pull `<% elixir %>` and `<md>` (markdown) tags as reference to prevent regex conflicts
+						// also pull `<script>` and `<style>` tags
+
 						regex.Comp(`(?s)<(_?@)([\w_-]+)>(.*)</\1\2>\r?\n?`).RepFunc(buf, func(data func(int) []byte) []byte {
 							name := string(data(2))
 							if _, ok := buf_page[name]; !ok {
@@ -117,6 +120,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 						buf_page := map[string][]byte{}
 
 						//todo: pull `<% elixir %>` and `<md>` (markdown) tags as reference to prevent regex conflicts
+						// also pull `<script>` and `<style>` tags
 
 						buf = regex.Comp(`(?s)(<!DOCTYPE(?:\s+[^>]*|)>|<html(?:\s+[^>]*|)>(.*)</html>)\r?\n?`).RepFunc(buf, func(data func(int) []byte) []byte {
 							buf_layout = append(buf_layout, data(0)...)
