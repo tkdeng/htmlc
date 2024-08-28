@@ -4,10 +4,12 @@ go 1.22.6
 
 require (
 	github.com/AspieSoft/go-regex-re2/v2 v2.2.0
+	github.com/AspieSoft/go-regex/v8 v8.2.0
 	github.com/tkdeng/goutil v0.3.0
 )
 
 require (
+	github.com/GRbit/go-pcre v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect

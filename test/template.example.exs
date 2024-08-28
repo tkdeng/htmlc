@@ -1,11 +1,14 @@
 defmodule App do
   @map_layout %{
+    "layouts/layout" => :layout,
   } #_map_layout
 
   @map_widget %{
+    "widgets/app" => :app,
   } #_map_widget
 
   @map_page %{
+    "pages/index" => :index,
   } #_map_page
 
   def render(name, layout, args) do
@@ -69,10 +72,41 @@ defmodule App do
 end
 
 defmodule LAYOUT do
+  def layout(args, cont) do
+'<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0"/>
+  <meta name="description" content="#{args[:desc]}"/>
+  <title>#{args[:title]}</title>
+  #{cont[:head]}
+</head>
+<body>
+  #{cont[:body]}
+</body>
+</html>'
+  end
 end #_LAYOUT
 
 defmodule WIDGET do
+  def app(args) do
+'#{args[:n]} * 2 = #{
+  args[:n] * 2
+}'
+  end
 end #_WIDGET
 
 defmodule PAGE do
+  def index(layout, args) do
+    App.layout layout, args, %{
+      head:
+'<link rel="stylesheet" href="/style.css">',
+      body:
+'<h1>Hello, World</h1>
+#{App.widget :app, Map.merge(args, %{
+  n: 2,
+})}',
+    }
+  end
 end #_PAGE
