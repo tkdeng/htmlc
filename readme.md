@@ -3,7 +3,9 @@
 Compiles HTML to Elixir.
 Who says HTML is not a programming language?
 
-This module is actually just another templating engine (and a really fast one).
+This module is just another templating engine, and a really fast one.
+With elixir, we can leverage its unique ability to call individual functions in `iex` mode.
+Elixir can quickly build templates on the fly, with our html stored in binary strings.
 
 ![meme](./assets/dm-meme-html-compiler.jpg)
 
@@ -61,4 +63,23 @@ You can also call this method without the "--src" or "--port"
 
 # note: the output file must still be specified with "--out"
 ./htmlc --out="html.exs" /var/www/html 3000
+```
+
+## Elixir Usage
+
+```elixir
+# start template engine
+iex "./html.exs"
+
+# render page
+iex> App.render "mypage/home", "mylayout/layout", %{args: "myarg"}
+
+# render widget (optional)
+iex> App.widget "mywidget/app", %{args: "myarg"}
+
+# render layout (optional)
+iex> App.layout "mylayout/layout", %{args: "myarg"}, %{body: "page embed"}
+
+# stop template engine
+iex> System.halt
 ```

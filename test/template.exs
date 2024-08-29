@@ -51,7 +51,7 @@ defmodule App do
 
   def widget(widget, args) do
     if @map_widget[widget] do
-      apply(WIDGET, widget, [args])
+      apply(WIDGET, @map_widget[widget], [args])
     else
       '{Error 500: Widget Not Found!}'
     end
@@ -59,7 +59,7 @@ defmodule App do
 
   def layout(layout, args, cont) do
     if @map_layout[layout] do
-      apply(LAYOUT, layout, [args, cont])
+      apply(LAYOUT, @map_layout[layout], [args, cont])
     else
       Enum.reduce(cont, '', fn {_, val}, a ->
         '#{a} #{val}'

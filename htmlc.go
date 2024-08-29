@@ -267,7 +267,7 @@ func compileExs(buf *[]byte, strList *[][]byte) error {
 	// may use previous regex to detect unclosed #{do} keywords
 
 	// compile html components
-	*buf = regex.Comp(`(?s)<(_?#)([\w_-]+)(\s+.*?|)(/>|>(.*?)</\1\2>)`).RepFunc(*buf, func(data func(int) []byte) []byte {
+	*buf = regex.Comp(`(?s)<(_?#)([\w_\-\.]+)(\s+.*?|)(/>|>(.*?)</\1\2>)`).RepFunc(*buf, func(data func(int) []byte) []byte {
 		args := map[string][]byte{
 			"body": {},
 		}
@@ -292,7 +292,7 @@ func compileExs(buf *[]byte, strList *[][]byte) error {
 			args["body"] = goutil.HTML.EscapeArgs(regex.Comp(`^(?s)>(.*)</_?#[\w_-]+>$`).RepStr(data(4), []byte("$1")))
 		}
 
-		b := regex.JoinBytes(`#{App.widget :`, data(2), `, Map.merge(args, %{`)
+		b := regex.JoinBytes(`#{App.widget "`, bytes.ReplaceAll(data(2), []byte{'.'}, []byte{'/'}), `", Map.merge(args, %{`)
 
 		for k, v := range args {
 			b = append(b, regex.JoinBytes(k, `: "`, v, `",`)...)
