@@ -1,5 +1,7 @@
 # HTMLC (HTML Compiler)
 
+[<img src="./assets/icon.png" alt="icon" height="100"/>](./assets/icon.png)
+
 Compiles HTML to Elixir.
 Who says HTML is not a programming language?
 
@@ -7,8 +9,7 @@ This module is just another templating engine, and a really fast one.
 With elixir, we can leverage its unique ability to call individual functions in `iex` mode.
 Elixir can quickly build templates on the fly, with our html stored in binary strings.
 
-[<img src="./assets/icon.png" alt="icon" height="200"/>](./assets/icon.png)
-[<img src="./assets/dm-meme-html-compiler.jpg" alt="icon" height="200"/>](./assets/dm-meme-html-compiler.jpg)
+[<img src="./assets/dm-meme-html-compiler.jpg" alt="icon" height="350"/>](./assets/dm-meme-html-compiler.jpg)
 
 ## Installation
 
@@ -66,7 +67,7 @@ You can also call this method without the "--src" or "--port"
 ./htmlc --out="html.exs" /var/www/html 3000
 ```
 
-## Elixir Usage
+## Elixir Template Usage
 
 ```elixir
 # start template engine
