@@ -222,6 +222,7 @@ func compileExs(buf *[]byte, strList *[][]byte) error {
 	var err error
 
 	//todo: may have to consider reading individual bytes in for loop instead of using regex
+	// note: may only need in some parts of the exs compiler
 
 	// compile <% elixir %> to #{} for strings
 	*buf = regex.Comp(`(?s)<%(.*?)%>`).RepFunc(*buf, func(data func(int) []byte) []byte {
