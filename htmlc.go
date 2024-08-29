@@ -221,6 +221,8 @@ func pullStrings(buf *[]byte, restore ...*[][]byte) [][]byte {
 func compileExs(buf *[]byte, strList *[][]byte) error {
 	var err error
 
+	//todo: may have to consider reading individual bytes in for loop instead of using regex
+
 	// compile <% elixir %> to #{} for strings
 	*buf = regex.Comp(`(?s)<%(.*?)%>`).RepFunc(*buf, func(data func(int) []byte) []byte {
 		if err != nil {
@@ -303,10 +305,23 @@ func compileExs(buf *[]byte, strList *[][]byte) error {
 	// compile embed variables
 	*buf = regex.Comp(`\{@([\w_]+)\}`).RepStr(*buf, []byte(`#{cont[:$1]}`))
 
+	//todo: compile if/each attributes to elixir (include else if and else)
+	// example: <header if="args.n == 2"> <else if=""/> <else/> </header>
+	// <ul each="menu"> <a href="{#url}">{#name}</a> </ul>
+	// <ul each="menu"> <a href="<% this.url %>"><% this.name %></a> </ul>
+	// <div each="menu"> {#} </div> | <div each="menu"> <% this %> </div>
+	// (note: may have to limit nesting logic)
+	// may have to consider pullStrings on inner content of each loops
+
 	pullStrings(buf, strList)
 
 	//todo: use func regex to compile {var.a} variables and more
+	// also escape html unless {&arg} to allow html
+	// and detect if in an html attr string, to escape htmlattr instead of html
+	// (note: may run alternate version before running pullStrings restore)
+
 	// compile arg variables
+	//todo: replace with better variable method
 	*buf = regex.Comp(`\{([\w_]+)\}`).RepStr(*buf, []byte(`#{args[:$1]}`))
 
 	return err
