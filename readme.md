@@ -9,7 +9,7 @@ This module is just another templating engine, and a really fast one.
 With elixir, we can leverage its unique ability to call individual functions in `iex` mode.
 Elixir can quickly build templates on the fly, with our html stored in binary strings.
 
-[<img src="./assets/dm-meme-html-compiler.jpg" alt="icon" height="350"/>](./assets/dm-meme-html-compiler.jpg)
+[<img src="./assets/dm-meme-html-compiler.jpg" alt="icon" height="250"/>](./assets/dm-meme-html-compiler.jpg)
 
 ## Installation
 
