@@ -1,9 +1,11 @@
 package htmlc
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	_ "embed"
@@ -35,7 +37,9 @@ func Compile(src string, out string) error {
 	outfile.Write(template)
 	// os.WriteFile(out, template, 0755)
 
-	compileDir(outfile, src, "", 'r')
+	if err = compileDir(outfile, src, "", 'r'); err != nil {
+		return err
+	}
 
 	//todo: compile templates to elixir (dist)
 	// may detect contents for diff between pages/layouts/widgets
@@ -67,18 +71,30 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 				if dirType == 'r' {
 					switch file.Name() {
 					case "layouts", "layout":
-						compileDir(out, path, "", 'l')
+						if err = compileDir(out, path, "", 'l'); err != nil {
+							return err
+						}
 					case "widgets", "widget":
-						compileDir(out, path, "", 'w')
+						if err = compileDir(out, path, "", 'w'); err != nil {
+							return err
+						}
 					case "pages", "page":
-						compileDir(out, path, "", 'p')
+						if err = compileDir(out, path, "", 'p'); err != nil {
+							return err
+						}
 					case "errors", "error":
-						compileDir(out, path, "", 'e')
+						if err = compileDir(out, path, "", 'e'); err != nil {
+							return err
+						}
 					default:
-						compileDir(out, path, file.Name(), 'd')
+						if err = compileDir(out, path, file.Name(), 'd'); err != nil {
+							return err
+						}
 					}
 				} else {
-					compileDir(out, path, name+"/"+file.Name(), dirType)
+					if err = compileDir(out, path, name+"/"+file.Name(), dirType); err != nil {
+						return err
+					}
 				}
 			}
 		} else if strings.HasSuffix(file.Name(), ".html") {
@@ -90,15 +106,20 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 					}
 					n += strings.TrimSuffix(file.Name(), ".html")
 
+					strList := pullStrings(&buf)
+
 					if dirType == 'l' {
-						loadLayout(out, n, buf)
+						if err := compileExs(&buf, &strList); err != nil {
+							return err
+						}
+						loadLayout(out, n, &buf)
 					} else if dirType == 'w' {
-						loadWidget(out, n, buf)
+						if err := compileExs(&buf, &strList); err != nil {
+							return err
+						}
+						loadWidget(out, n, &buf)
 					} else if dirType == 'p' || dirType == 'e' {
 						buf_page := map[string][]byte{}
-
-						//todo: pull `<% elixir %>` and `<md>` (markdown) tags as reference to prevent regex conflicts
-						// also pull `<script>` and `<style>` tags
 
 						regex.Comp(`(?s)<(_?@)([\w_-]+)>(.*)</\1\2>\r?\n?`).RepFunc(buf, func(data func(int) []byte) []byte {
 							name := string(data(2))
@@ -114,13 +135,16 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 							buf_page["body"] = buf
 						}
 
-						loadPage(out, n, buf_page)
+						for k, b := range buf_page {
+							if err := compileExs(&b, &strList); err != nil {
+								return err
+							}
+							buf_page[k] = b
+						}
+						loadPage(out, n, &buf_page)
 					} else {
 						var buf_layout []byte
 						buf_page := map[string][]byte{}
-
-						//todo: pull `<% elixir %>` and `<md>` (markdown) tags as reference to prevent regex conflicts
-						// also pull `<script>` and `<style>` tags
 
 						buf = regex.Comp(`(?s)(<!DOCTYPE(?:\s+[^>]*|)>|<html(?:\s+[^>]*|)>(.*)</html>)\r?\n?`).RepFunc(buf, func(data func(int) []byte) []byte {
 							buf_layout = append(buf_layout, data(0)...)
@@ -138,15 +162,27 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 						})
 
 						if len(buf_layout) != 0 {
-							loadLayout(out, n, buf_layout)
+							if err := compileExs(&buf_layout, &strList); err != nil {
+								return err
+							}
+							loadLayout(out, n, &buf_layout)
 						}
 
 						if len(buf_page) != 0 {
-							loadPage(out, n, buf_page)
+							for k, b := range buf_page {
+								if err := compileExs(&b, &strList); err != nil {
+									return err
+								}
+								buf_page[k] = b
+							}
+							loadPage(out, n, &buf_page)
 						}
 
 						if len(buf) != 0 && len(regex.Comp(`(?s)[\s\r\n\t ]+`).RepStrLit(buf, []byte{})) != 0 {
-							loadWidget(out, n, buf)
+							if err := compileExs(&buf, &strList); err != nil {
+								return err
+							}
+							loadWidget(out, n, &buf)
 						}
 					}
 				}
@@ -157,17 +193,140 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 	return nil
 }
 
-func loadLayout(out *os.File, name string, buf []byte) {
+// pullStrings pulls out strings and creates references to them
+//
+// @restore: alternate functionality to restore pulled strings to references
+func pullStrings(buf *[]byte, restore ...*[][]byte) [][]byte {
+	if len(restore) != 0 {
+		*buf = regex.Comp(`(?s)(["'\'])str:([A-Za-z0-9]+)\1`).RepFunc(*buf, func(data func(int) []byte) []byte {
+			if i, err := strconv.ParseUint(string(data(2)), 36, 64); err == nil {
+				return regex.JoinBytes(data(1), (*restore[0])[i], data(1))
+			}
+			return data(0)
+		})
+
+		return nil
+	}
+
+	strList := [][]byte{}
+
+	*buf = regex.Comp(`(?s)(["'\'])((?:\\(?:\\|\1)|.)*?)\1`).RepFunc(*buf, func(data func(int) []byte) []byte {
+		strList = append(strList, data(2))
+		return regex.JoinBytes(data(1), `str:`, strconv.FormatUint(uint64(len(strList)-1), 36), data(1))
+	})
+
+	return strList
+}
+
+// compileExs compiles elixir in the html buffer
+func compileExs(buf *[]byte, strList *[][]byte) error {
+	var err error
+
+	// compile <% elixir %> to #{} for strings
+	*buf = regex.Comp(`(?s)<%(.*?)%>`).RepFunc(*buf, func(data func(int) []byte) []byte {
+		if err != nil {
+			return nil
+		}
+
+		// ensure {brackets} are properly opened and closed (to prevent escaping '#{}' in elixir strings)
+		count := 0
+		regex.Comp(`[{}]`).RepFunc(data(1), func(data func(int) []byte) []byte {
+			if err != nil {
+				return nil
+			}
+
+			if data(0)[0] == '{' {
+				count++
+			} else {
+				count--
+				if count < 0 {
+					err = errors.New("invalid exs script: '}' was not opened")
+					return nil
+				}
+			}
+
+			return []byte{}
+		}, true)
+
+		if err != nil {
+			return nil
+		}
+
+		if count > 0 {
+			err = errors.New("invalid exs script: '{' was not closed")
+			return nil
+		} else if count < 0 {
+			err = errors.New("invalid exs script: '}' was not opened")
+			return nil
+		}
+
+		return regex.JoinBytes([]byte("#{"), data(1), '}')
+	})
+
+	//todo: detect ending #{do} and starting #{end} tags and merge contents into inner string
+	// may use previous regex to detect unclosed #{do} keywords
+
+	// compile html components
+	*buf = regex.Comp(`(?s)<(_?#)([\w_-]+)(\s+.*?|)(/>|>(.*?)</\1\2>)`).RepFunc(*buf, func(data func(int) []byte) []byte {
+		args := map[string][]byte{
+			"body": {},
+		}
+
+		argList := regex.Comp(`([\w_-]+\s*=\s*(?:".*?"|'.*?'|[\w_-]*))`).Split(data(3))
+		for _, arg := range argList {
+			if len(bytes.TrimSpace(arg)) != 0 {
+				a := bytes.SplitN(arg, []byte{'='}, 2)
+				pullStrings(&a[1], strList)
+
+				if len(a[1]) >= 3 {
+					if (a[1][0] == '"' && a[1][len(a[1])-1] == '"') || (a[1][0] == '\'' && a[1][len(a[1])-1] == '\'') {
+						a[1] = a[1][1 : len(a[1])-1]
+					}
+				}
+
+				args[string(a[0])] = goutil.HTML.EscapeArgs(a[1])
+			}
+		}
+
+		if !bytes.Equal(data(4), []byte("/>")) {
+			args["body"] = goutil.HTML.EscapeArgs(regex.Comp(`^(?s)>(.*)</_?#[\w_-]+>$`).RepStr(data(4), []byte("$1")))
+		}
+
+		b := regex.JoinBytes(`#{App.widget :`, data(2), `, Map.merge(args, %{`)
+
+		for k, v := range args {
+			b = append(b, regex.JoinBytes(k, `: "`, v, `",`)...)
+		}
+
+		return append(b, []byte(`})}`)...)
+	})
+
+	// compile embed variables
+	*buf = regex.Comp(`\{@([\w_]+)\}`).RepStr(*buf, []byte(`#{cont[:$1]}`))
+
+	pullStrings(buf, strList)
+
+	//todo: use func regex to compile {var.a} variables and more
+	// compile arg variables
+	*buf = regex.Comp(`\{([\w_]+)\}`).RepStr(*buf, []byte(`#{args[:$1]}`))
+
+	return err
+}
+
+// loadLayout loads a new layout into the output file
+func loadLayout(out *os.File, name string, buf *[]byte) {
 	//todo: compile layout
 	// fmt.Println("layout:", name)
 }
 
-func loadWidget(out *os.File, name string, buf []byte) {
+// loadWidget loads a new widget into the output file
+func loadWidget(out *os.File, name string, buf *[]byte) {
 	//todo: compile widget
 	// fmt.Println("widget:", name)
 }
 
-func loadPage(out *os.File, name string, buf map[string][]byte) {
+// loadPage loads a new page into the output file
+func loadPage(out *os.File, name string, buf *map[string][]byte) {
 	//todo: compile page
 	// fmt.Println("page:", name)
 }
