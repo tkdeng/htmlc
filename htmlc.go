@@ -35,7 +35,6 @@ func Compile(src string, out string) error {
 	defer outfile.Close()
 
 	outfile.Write(template)
-	// os.WriteFile(out, template, 0755)
 
 	if err = compileDir(outfile, src, "", 'r'); err != nil {
 		return err
