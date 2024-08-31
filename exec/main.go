@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AspieSoft/go-regex-re2/v2"
+	"github.com/tkdeng/goregex"
 	"github.com/tkdeng/goutil"
 	"github.com/tkdeng/htmlc"
 )

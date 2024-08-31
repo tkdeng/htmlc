@@ -3,9 +3,8 @@ module github.com/tkdeng/htmlc
 go 1.22.6
 
 require (
-	github.com/AspieSoft/go-regex-re2/v2 v2.2.0
-	github.com/AspieSoft/go-regex/v8 v8.2.0
-	github.com/tkdeng/goutil v0.3.0
+	github.com/tkdeng/goregex v0.0.1
+	github.com/tkdeng/goutil v0.4.0
 )
 
 require (

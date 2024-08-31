@@ -10,7 +10,7 @@ import (
 
 	_ "embed"
 
-	"github.com/AspieSoft/go-regex/v8"
+	"github.com/tkdeng/goregex"
 	"github.com/tkdeng/goutil"
 )
 
@@ -128,7 +128,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 								buf_page[name] = append(buf_page[name], data(3)...)
 							}
 							return []byte{}
-						}, true)
+						})
 
 						if len(buf_page) == 0 {
 							buf_page["body"] = buf
@@ -248,7 +248,7 @@ func compileExs(buf *[]byte, strList *[][]byte) error {
 			}
 
 			return []byte{}
-		}, true)
+		})
 
 		if err != nil {
 			return nil
