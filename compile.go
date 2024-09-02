@@ -1,0 +1,461 @@
+package htmlc
+
+import (
+	"bytes"
+
+	regex "github.com/tkdeng/goregex"
+	"github.com/tkdeng/goutil"
+)
+
+// compileExs compiles elixir in the html buffer
+//
+// call compile to start main compiler
+type compileExs struct {
+	buf *[]byte
+}
+
+func (comp *compileExs) clean() {
+	goutil.Clean(*comp.buf)
+	bytes.ReplaceAll(*comp.buf, []byte{0}, []byte{})
+}
+
+// compileExs compiles elixir in the html buffer
+func (comp *compileExs) compile() error {
+	comp.clean()
+
+	safeFor(comp.buf, func(i *int, b func(int) byte, m safeForMethods) bool {
+		// get "string"
+		if b(0) == '"' || b(0) == '\'' {
+			q := b(0)
+			str := []byte{}
+			m.inc(1)
+			ind := [2]int{*i}
+
+			m.loop(func() bool { return b(0) != q }, func() bool {
+				if b(0) == '\\' {
+					if b(1) == q || isCharAlphaNumeric(b(1)) {
+						str = append(str, b(0))
+					}
+					m.inc(1)
+				}
+
+				str = append(str, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i
+
+			comp.compStr(q, &str)
+			m.replace(&ind, &str)
+
+			return true
+		}
+
+		// get {var object}
+		if b(0) == '{' {
+			obj := []byte{}
+			ind := [2]int{*i}
+			m.inc(1)
+
+			m.loop(func() bool { return b(0) != '}' }, func() bool {
+				obj = append(obj, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i + 1
+
+			comp.compObj(&obj, true)
+			m.replace(&ind, &obj)
+
+			return true
+		}
+
+		// get <% elixir %>
+		if b(0) == '<' && b(1) == '%' {
+			exs := []byte{}
+			m.inc(2)
+			ind := [2]int{*i}
+
+			m.loop(func() bool { return b(0) != '%' && b(1) != '>' }, func() bool {
+				exs = append(exs, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i
+			m.inc(1)
+
+			comp.compExs(&exs)
+			m.replace(&ind, &exs)
+
+			return true
+		}
+
+		// get <#widget>
+		if b(0) == '<' && (b(1) == '#' || (b(1) == '_' && b(2) == '#')) {
+			ind := [2]int{*i}
+
+			var close []byte
+			if b(1) == '_' && b(2) == '#' {
+				m.inc(3)
+				close = []byte("</_#")
+			} else {
+				m.inc(2)
+				close = []byte("</#")
+			}
+
+			name := []byte{}
+			m.loop(func() bool { return b(0) != '>' && b(0) != ' ' }, func() bool {
+				name = append(name, b(0))
+				m.inc(1)
+				return true
+			})
+			close = append(close, name...)
+			close = append(close, '>')
+
+			if b(0) != '>' {
+				m.inc(1)
+			}
+
+			args := map[string][]byte{}
+			argName := []byte{}
+			m.loop(func() bool { return b(0) != '>' }, func() bool {
+				if b(0) == '=' {
+					m.inc(1)
+
+					str := []byte{}
+					if b(0) == '"' || b(0) == '\'' {
+						q := b(0)
+						m.inc(1)
+
+						m.loop(func() bool { return b(0) != q }, func() bool {
+							if b(0) == '\\' {
+								if b(1) == q || isCharAlphaNumeric(b(1)) {
+									str = append(str, b(0))
+								}
+								m.inc(1)
+							}
+
+							str = append(str, b(0))
+							m.inc(1)
+							return true
+						})
+						ind[1] = *i
+
+						comp.compStr(q, &str)
+					} else {
+						m.loop(func() bool { return b(0) != ' ' && b(0) != '>' }, func() bool {
+							if b(0) == '\\' {
+								if isCharAlphaNumeric(b(1)) {
+									str = append(str, b(0))
+								}
+								m.inc(1)
+							}
+
+							str = append(str, b(0))
+							m.inc(1)
+							return true
+						})
+					}
+
+					if len(argName) != 0 {
+						args[string(argName)] = str
+					} else {
+						args[string(str)] = []byte("true")
+					}
+					argName = []byte{}
+
+					m.inc(1)
+					return true
+				} else if b(0) == ' ' && len(argName) != 0 {
+					args[string(argName)] = []byte("true")
+					argName = []byte{}
+					m.inc(1)
+					return true
+				}
+
+				if b(0) != ' ' {
+					argName = append(argName, b(0))
+				}
+				m.inc(1)
+
+				return true
+			})
+
+			if len(argName) != 0 {
+				args[string(argName)] = []byte("true")
+			}
+			ind[1] = *i
+
+			//todo: compile widget content
+			// may use similar method to old turbx module for inner html content
+			// allowing the compiler to write to alternate []byte from list, then bulk replacing
+
+			_, _, _ = args, ind, close
+
+			return true
+		}
+
+		// get <markdown>, <script>, and <style> tags
+		if b(0) == '<' && (bytes.Equal(m.getBuf(3), []byte("<md")) || bytes.Equal(m.getBuf(9), []byte("<markdown"))) {
+			var closeTag []byte
+			if bytes.Equal(m.getBuf(3), []byte("<md")) {
+				m.inc(3)
+				closeTag = []byte("</md>")
+			} else {
+				m.inc(9)
+				closeTag = []byte("</markdown>")
+			}
+
+			if b(0) != '>' && b(0) != ' ' {
+				return true
+			}
+
+			m.loop(func() bool { return b(0) != '>' }, func() bool {
+				if b(0) == '"' || b(0) == '\'' {
+					q := b(0)
+					str := []byte{}
+					m.inc(1)
+					ind := [2]int{*i}
+
+					m.loop(func() bool { return b(0) != q }, func() bool {
+						if b(0) == '\\' {
+							if b(1) == q || isCharAlphaNumeric(b(1)) {
+								str = append(str, b(0))
+							}
+							m.inc(1)
+						}
+
+						str = append(str, b(0))
+						m.inc(1)
+						return true
+					})
+					ind[1] = *i
+
+					comp.compStr(q, &str)
+					m.replace(&ind, &str)
+				}
+
+				m.inc(1)
+				return true
+			})
+
+			md := []byte{}
+			m.inc(1)
+			ind := [2]int{*i}
+			m.loop(func() bool { return !bytes.Equal(m.getBuf(len(closeTag)), closeTag) }, func() bool {
+				md = append(md, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i
+
+			comp.compMarkdown(&md)
+			m.replace(&ind, &md)
+
+			return true
+		} else if b(0) == '<' && bytes.Equal(m.getBuf(7), []byte("<script")) {
+			m.inc(7)
+			if b(0) != '>' && b(0) != ' ' {
+				return true
+			}
+
+			m.loop(func() bool { return b(0) != '>' }, func() bool {
+				if b(0) == '"' || b(0) == '\'' {
+					q := b(0)
+					str := []byte{}
+					m.inc(1)
+					ind := [2]int{*i}
+
+					m.loop(func() bool { return b(0) != q }, func() bool {
+						if b(0) == '\\' {
+							if b(1) == q || isCharAlphaNumeric(b(1)) {
+								str = append(str, b(0))
+							}
+							m.inc(1)
+						}
+
+						str = append(str, b(0))
+						m.inc(1)
+						return true
+					})
+					ind[1] = *i
+
+					comp.compStr(q, &str)
+					m.replace(&ind, &str)
+				}
+
+				m.inc(1)
+				return true
+			})
+
+			js := []byte{}
+			m.inc(1)
+			ind := [2]int{*i}
+			m.loop(func() bool { return !bytes.Equal(m.getBuf(9), []byte("</script>")) }, func() bool {
+				js = append(js, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i
+
+			comp.compJS(&js)
+			m.replace(&ind, &js)
+
+			return true
+		} else if b(0) == '<' && bytes.Equal(m.getBuf(6), []byte("<style")) {
+			m.inc(6)
+			if b(0) != '>' && b(0) != ' ' {
+				return true
+			}
+
+			m.loop(func() bool { return b(0) != '>' }, func() bool {
+				if b(0) == '"' || b(0) == '\'' {
+					q := b(0)
+					str := []byte{}
+					m.inc(1)
+					ind := [2]int{*i}
+
+					m.loop(func() bool { return b(0) != q }, func() bool {
+						if b(0) == '\\' {
+							if b(1) == q || isCharAlphaNumeric(b(1)) {
+								str = append(str, b(0))
+							}
+							m.inc(1)
+						}
+
+						str = append(str, b(0))
+						m.inc(1)
+						return true
+					})
+					ind[1] = *i
+
+					comp.compStr(q, &str)
+					m.replace(&ind, &str)
+				}
+
+				m.inc(1)
+				return true
+			})
+
+			css := []byte{}
+			m.inc(1)
+			ind := [2]int{*i}
+			m.loop(func() bool { return !bytes.Equal(m.getBuf(8), []byte("</style>")) }, func() bool {
+				css = append(css, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i
+
+			comp.compCSS(&css)
+			m.replace(&ind, &css)
+
+			return true
+		}
+
+		return true
+	})
+
+	return nil
+}
+
+func (comp *compileExs) compStr(q byte, str *[]byte) {
+	safeFor(str, func(i *int, b func(int) byte, m safeForMethods) bool {
+		// get {var object}
+		if b(0) == '{' {
+			obj := []byte{}
+			ind := [2]int{*i}
+			m.inc(1)
+
+			m.loop(func() bool { return b(0) != '}' }, func() bool {
+				if b(0) == '\\' {
+					if b(1) == q || isCharAlphaNumeric(b(1)) {
+						obj = append(obj, b(0))
+					}
+					m.inc(1)
+				}
+
+				obj = append(obj, b(0))
+				m.inc(1)
+				return true
+			})
+			ind[1] = *i + 1
+
+			comp.compObj(&obj, true)
+			m.replace(&ind, &obj)
+
+			return true
+		}
+
+		return true
+	})
+}
+
+func (comp *compileExs) compObj(obj *[]byte, inStr bool) {
+	v := []byte("#{")
+
+	if !inStr && (*obj)[0] == '@' {
+		v = append(v, []byte("cont[:")...)
+		if len(*obj) == 1 {
+			v = append(v, []byte("body]}")...)
+			*obj = v
+			return
+		}
+		*obj = (*obj)[1:]
+
+		v = append(v, regex.CompRE2(`[^\w_]+`).RepStrLit(*obj, []byte{})...)
+		v = append(v, ']', '}')
+		*obj = v
+		return
+	}
+
+	if (*obj)[0] == '#' {
+		v = append(v, []byte("this")...)
+		if len(*obj) == 1 {
+			v = append(v, '}')
+			*obj = v
+			return
+		}
+		*obj = (*obj)[1:]
+	} else if (*obj)[0] == '&' {
+		v = append(v, []byte("args")...)
+		*obj = (*obj)[1:]
+	} else {
+		if inStr {
+			v = append(v, []byte(`App.escapeArg `)...)
+		} else {
+			v = append(v, []byte(`App.escapeHTML `)...)
+		}
+
+		v = append(v, []byte("args")...)
+	}
+
+	arg := bytes.Split(*obj, []byte{'.'})
+	for _, a := range arg {
+		a = regex.CompRE2(`[^\w_]+`).RepStrLit(a, []byte{})
+		if len(a) != 0 {
+			v = append(v, '[', ':')
+			v = append(v, a...)
+			v = append(v, ']')
+		}
+	}
+
+	v = append(v, '}')
+	*obj = v
+}
+
+func (comp *compileExs) compExs(exs *[]byte) {
+	//todo: compile exs scripts
+}
+
+func (comp *compileExs) compMarkdown(md *[]byte) {
+	//todo: compile markdown
+}
+
+func (comp *compileExs) compJS(md *[]byte) {
+	//todo: compile js script
+}
+
+func (comp *compileExs) compCSS(md *[]byte) {
+	//todo: compile css style
+}

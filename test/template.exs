@@ -66,6 +66,16 @@ defmodule App do
       end)
     end
   end
+
+  def escapeHTML(arg) do
+    #todo: add regex to escape html
+    '#{arg}'
+  end
+
+  def escapeArg(arg) do
+    #todo: add regex to escape html arg in string
+    '#{arg}'
+  end
 end
 
 defmodule LAYOUT do
