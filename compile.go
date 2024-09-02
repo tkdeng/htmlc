@@ -64,7 +64,7 @@ func (comp *compileExs) compile() error {
 			})
 			ind[1] = *i + 1
 
-			comp.compObj(&obj, true)
+			comp.compObj(&obj, false)
 			m.replace(&ind, &obj)
 
 			return true
@@ -184,13 +184,31 @@ func (comp *compileExs) compile() error {
 			if len(argName) != 0 {
 				args[string(argName)] = []byte("true")
 			}
-			ind[1] = *i
 
-			//todo: compile widget content
-			// may use similar method to old turbx module for inner html content
-			// allowing the compiler to write to alternate []byte from list, then bulk replacing
+			if b(-1) == '/' {
+				ind[1] = *i + 1
+				m.replace(&ind, comp.embedWedget(name, args))
+				return true
+			}
 
-			_, _, _ = args, ind, close
+			// get widget content
+
+			m.inc(1)
+			cont := []byte{}
+			m.loop(func() bool { return !bytes.Equal(m.getBuf(len(close)), close) }, func() bool {
+				cont = append(cont, b(0))
+				m.inc(1)
+				return true
+			})
+			m.inc(len(close) - 1)
+			ind[1] = *i + 1
+
+			compCont := compileExs{buf: &cont}
+			compCont.compile()
+
+			args["body"] = cont
+
+			m.replace(&ind, comp.embedWedget(name, args))
 
 			return true
 		}
@@ -458,4 +476,11 @@ func (comp *compileExs) compJS(md *[]byte) {
 
 func (comp *compileExs) compCSS(md *[]byte) {
 	//todo: compile css style
+}
+
+func (comp *compileExs) embedWedget(name []byte, args map[string][]byte) *[]byte {
+
+	//todo: return #{elixir} script for widget
+
+	return &[]byte{}
 }

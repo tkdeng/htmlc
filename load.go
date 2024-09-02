@@ -20,4 +20,6 @@ func loadWidget(out *os.File, name string, buf *[]byte) {
 func loadPage(out *os.File, name string, buf *map[string][]byte) {
 	//todo: compile page
 	// fmt.Println("page:", name)
+
+	// fmt.Println(string((*buf)["body"]))
 }
