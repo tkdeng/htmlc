@@ -1,16 +1,16 @@
 defmodule App do
   @map_layout %{
-		"layout" => :_layout_a9uh4GDwCxpVDVSx,
+		"layout" => :_layout_a9uh5MTl0pszCrA6,
   } #_MAP_LAYOUT
 
   @map_widget %{
-		"app" => :_app_a9uh4D7GtK5Y1LTC,
+		"app" => :_app_a9uh58DahcA7VPBB,
   } #_MAP_WIDGET
 
   @map_page %{
-		"404" => :_404_a9uh4SaQr0y4us63,
-		"error" => :_error_a9uh4rfvEoouK1JR,
-		"index" => :_index_a9uh48udnnl9DWQQ,
+		"404" => :_404_a9uh5HX9W2Toe31a,
+		"error" => :_error_a9uh5XNYLQvtmBfK,
+		"index" => :_index_a9uh5L4DrL4GA5Ox,
   } #_MAP_PAGE
 
   def render(name, layout, args) do
@@ -88,7 +88,7 @@ defmodule App do
   end
 
   def escapeArg(arg) do
-    String.replace("string \" escape \\\" and \\\\ and \\ and \\\\\" test", ~r/([\\]*)([\\"'])/, fn (c) ->
+    String.replace(arg, ~r/([\\]*)([\\"'])/, fn (c) ->
       if rem(String.length(c), 2) == 0 do
         "#{c}"
       else
@@ -99,7 +99,7 @@ defmodule App do
 end
 
 defmodule LAYOUT do
-	def _layout_a9uh4GDwCxpVDVSx(args, cont) do
+	def _layout_a9uh5MTl0pszCrA6(args, cont) do
 '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,7 +118,7 @@ defmodule LAYOUT do
 end #_LAYOUT
 
 defmodule WIDGET do
-	def _app_a9uh4D7GtK5Y1LTC(args) do
+	def _app_a9uh58DahcA7VPBB(args) do
 '#{App.escapeHTML args[:n]} * 2 = <%
   args.n * 2
 %>
@@ -127,7 +127,7 @@ defmodule WIDGET do
 end #_WIDGET
 
 defmodule PAGE do
-	def _404_a9uh4SaQr0y4us63(layout, args) do
+	def _404_a9uh5HX9W2Toe31a(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -136,7 +136,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _error_a9uh4rfvEoouK1JR(layout, args) do
+	def _error_a9uh5XNYLQvtmBfK(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -145,7 +145,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _index_a9uh48udnnl9DWQQ(layout, args) do
+	def _index_a9uh5L4DrL4GA5Ox(layout, args) do
 		App.layout layout, args, %{
 			head:
 '

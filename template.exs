@@ -83,7 +83,7 @@ defmodule App do
   end
 
   def escapeArg(arg) do
-    String.replace("string \" escape \\\" and \\\\ and \\ and \\\\\" test", ~r/([\\]*)([\\"'])/, fn (c) ->
+    String.replace(arg, ~r/([\\]*)([\\"'])/, fn (c) ->
       if rem(String.length(c), 2) == 0 do
         "#{c}"
       else
