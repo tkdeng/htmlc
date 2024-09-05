@@ -1,16 +1,16 @@
 defmodule App do
   @map_layout %{
-		"layout" => :_layout_a9ufmrVC6ClF1f43,
+		"layout" => :_layout_a9uh4GDwCxpVDVSx,
   } #_MAP_LAYOUT
 
   @map_widget %{
-		"app" => :_app_a9ufmYtq2YI9TIAy,
+		"app" => :_app_a9uh4D7GtK5Y1LTC,
   } #_MAP_WIDGET
 
   @map_page %{
-		"404" => :_404_a9ufmWp08E0NB3ZA,
-		"error" => :_error_a9ufmtbi5H63MPUh,
-		"index" => :_index_a9ufmpnlKCp4Apjf,
+		"404" => :_404_a9uh4SaQr0y4us63,
+		"error" => :_error_a9uh4rfvEoouK1JR,
+		"index" => :_index_a9uh48udnnl9DWQQ,
   } #_MAP_PAGE
 
   def render(name, layout, args) do
@@ -73,18 +73,33 @@ defmodule App do
   end
 
   def escapeHTML(arg) do
-    #todo: add regex to escape html
-    '#{arg}'
+    String.replace(arg, ~r/[<>&]/, fn (c) ->
+      cond do
+        c == "<" ->
+          "&lt;"
+        c == ">" ->
+          "&gt;"
+        c == "&" ->
+          "&amp;"
+        true ->
+          ""
+      end
+    end) |> String.replace(~r/&amp;(amp;)*/, "&amp;")
   end
 
   def escapeArg(arg) do
-    #todo: add regex to escape html arg in string
-    '#{arg}'
+    String.replace("string \" escape \\\" and \\\\ and \\ and \\\\\" test", ~r/([\\]*)([\\"'])/, fn (c) ->
+      if rem(String.length(c), 2) == 0 do
+        "#{c}"
+      else
+        "\\#{c}"
+      end
+    end)
   end
 end
 
 defmodule LAYOUT do
-	def _layout_a9ufmrVC6ClF1f43(args, cont) do
+	def _layout_a9uh4GDwCxpVDVSx(args, cont) do
 '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,7 +118,7 @@ defmodule LAYOUT do
 end #_LAYOUT
 
 defmodule WIDGET do
-	def _app_a9ufmYtq2YI9TIAy(args) do
+	def _app_a9uh4D7GtK5Y1LTC(args) do
 '#{App.escapeHTML args[:n]} * 2 = <%
   args.n * 2
 %>
@@ -112,7 +127,7 @@ defmodule WIDGET do
 end #_WIDGET
 
 defmodule PAGE do
-	def _404_a9ufmWp08E0NB3ZA(layout, args) do
+	def _404_a9uh4SaQr0y4us63(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -121,7 +136,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _error_a9ufmtbi5H63MPUh(layout, args) do
+	def _error_a9uh4rfvEoouK1JR(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -130,8 +145,12 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _index_a9ufmpnlKCp4Apjf(layout, args) do
+	def _index_a9uh48udnnl9DWQQ(layout, args) do
 		App.layout layout, args, %{
+			head:
+'
+  <link rel="stylesheet" href="/style.css">
+',
 			body:
 '
   <h1>Hello, World</h1>
@@ -149,10 +168,6 @@ defmodule PAGE do
   <ul each="menu">
     <li><a href="#{this[:url]}">#{this[:name]}</a></li>
   </ul>
-',
-			head:
-'
-  <link rel="stylesheet" href="/style.css">
 ',
 		}
 	end

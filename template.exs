@@ -68,13 +68,28 @@ defmodule App do
   end
 
   def escapeHTML(arg) do
-    #todo: add regex to escape html
-    '#{arg}'
+    String.replace(arg, ~r/[<>&]/, fn (c) ->
+      cond do
+        c == "<" ->
+          "&lt;"
+        c == ">" ->
+          "&gt;"
+        c == "&" ->
+          "&amp;"
+        true ->
+          ""
+      end
+    end) |> String.replace(~r/&amp;(amp;)*/, "&amp;")
   end
 
   def escapeArg(arg) do
-    #todo: add regex to escape html arg in string
-    '#{arg}'
+    String.replace("string \" escape \\\" and \\\\ and \\ and \\\\\" test", ~r/([\\]*)([\\"'])/, fn (c) ->
+      if rem(String.length(c), 2) == 0 do
+        "#{c}"
+      else
+        "\\#{c}"
+      end
+    end)
   end
 end
 
