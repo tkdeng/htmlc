@@ -15,8 +15,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/tkdeng/goregex v0.0.1 h1:FDzfPPh9WPjq+1SoWiTCmj/y8kUSBLZrrzBxj2jS1AM=
 github.com/tkdeng/goregex v0.0.1/go.mod h1:J7KTKpQXsJvFspOWei3V7IYLnB9DQvrMMXAw2cjeu1E=
-github.com/tkdeng/goutil v0.4.0 h1:np6cUnVJGlLTzNOVMx0YJlTxidhYIvVEvOAT62hBMlg=
-github.com/tkdeng/goutil v0.4.0/go.mod h1:3kDx00BW5bQx/wSl5L5XAwYScNRYX0nxTdrlcWxBXSw=
+github.com/tkdeng/goutil v0.5.0 h1:ntqtHYw58FKzvwapN/fBLyT3HGR5XW71GPitPtTlqv0=
+github.com/tkdeng/goutil v0.5.0/go.mod h1:3kDx00BW5bQx/wSl5L5XAwYScNRYX0nxTdrlcWxBXSw=
 github.com/tklauser/go-sysconf v0.3.14 h1:g5vzr9iPFFz24v2KZXs/pvpvh8/V9Fw6vQK5ZZb78yU=
 github.com/tklauser/go-sysconf v0.3.14/go.mod h1:1ym4lWMLUOhuBOPGtRcJm7tEGX4SCYNEEEtghGG/8uY=
 github.com/tklauser/numcpus v0.8.0 h1:Mx4Wwe/FjZLeQsK/6kt2EOepwwSl7SmJrK5bV/dXYgY=

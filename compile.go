@@ -23,30 +23,30 @@ func (comp *compileExs) clean() {
 func (comp *compileExs) compile() error {
 	comp.clean()
 
-	safeFor(comp.buf, func(i *int, b func(int) byte, m safeForMethods) bool {
+	goutil.StepBytes(comp.buf, func(i *int, b func(int) byte, m goutil.StepBytesMethod) bool {
 		// get "string"
 		if b(0) == '"' || b(0) == '\'' {
 			q := b(0)
 			str := []byte{}
-			m.inc(1)
+			m.Inc(1)
 			ind := [2]int{*i}
 
-			m.loop(func() bool { return b(0) != q }, func() bool {
+			m.Loop(func() bool { return b(0) != q }, func() bool {
 				if b(0) == '\\' {
 					if b(1) == q || isCharAlphaNumeric(b(1)) {
 						str = append(str, b(0))
 					}
-					m.inc(1)
+					m.Inc(1)
 				}
 
 				str = append(str, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i
 
 			comp.compStr(q, &str)
-			m.replace(&ind, &str)
+			m.Replace(&ind, &str)
 
 			return true
 		}
@@ -55,17 +55,17 @@ func (comp *compileExs) compile() error {
 		if b(0) == '{' {
 			obj := []byte{}
 			ind := [2]int{*i}
-			m.inc(1)
+			m.Inc(1)
 
-			m.loop(func() bool { return b(0) != '}' }, func() bool {
+			m.Loop(func() bool { return b(0) != '}' }, func() bool {
 				obj = append(obj, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i + 1
 
 			comp.compObj(&obj, false)
-			m.replace(&ind, &obj)
+			m.Replace(&ind, &obj)
 
 			return true
 		}
@@ -73,19 +73,19 @@ func (comp *compileExs) compile() error {
 		// get <% elixir %>
 		if b(0) == '<' && b(1) == '%' {
 			exs := []byte{}
-			m.inc(2)
+			m.Inc(2)
 			ind := [2]int{*i}
 
-			m.loop(func() bool { return b(0) != '%' && b(1) != '>' }, func() bool {
+			m.Loop(func() bool { return b(0) != '%' && b(1) != '>' }, func() bool {
 				exs = append(exs, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i
-			m.inc(1)
+			m.Inc(1)
 
 			comp.compExs(&exs)
-			m.replace(&ind, &exs)
+			m.Replace(&ind, &exs)
 
 			return true
 		}
@@ -96,63 +96,63 @@ func (comp *compileExs) compile() error {
 
 			var close []byte
 			if b(1) == '_' && b(2) == '#' {
-				m.inc(3)
+				m.Inc(3)
 				close = []byte("</_#")
 			} else {
-				m.inc(2)
+				m.Inc(2)
 				close = []byte("</#")
 			}
 
 			name := []byte{}
-			m.loop(func() bool { return b(0) != '>' && b(0) != ' ' }, func() bool {
+			m.Loop(func() bool { return b(0) != '>' && b(0) != ' ' }, func() bool {
 				name = append(name, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			close = append(close, name...)
 			close = append(close, '>')
 
 			if b(0) != '>' {
-				m.inc(1)
+				m.Inc(1)
 			}
 
 			args := map[string][]byte{}
 			argName := []byte{}
-			m.loop(func() bool { return b(0) != '>' }, func() bool {
+			m.Loop(func() bool { return b(0) != '>' }, func() bool {
 				if b(0) == '=' {
-					m.inc(1)
+					m.Inc(1)
 
 					str := []byte{}
 					if b(0) == '"' || b(0) == '\'' {
 						q := b(0)
-						m.inc(1)
+						m.Inc(1)
 
-						m.loop(func() bool { return b(0) != q }, func() bool {
+						m.Loop(func() bool { return b(0) != q }, func() bool {
 							if b(0) == '\\' {
 								if b(1) == q || isCharAlphaNumeric(b(1)) {
 									str = append(str, b(0))
 								}
-								m.inc(1)
+								m.Inc(1)
 							}
 
 							str = append(str, b(0))
-							m.inc(1)
+							m.Inc(1)
 							return true
 						})
 						ind[1] = *i
 
 						comp.compStr(q, &str)
 					} else {
-						m.loop(func() bool { return b(0) != ' ' && b(0) != '>' }, func() bool {
+						m.Loop(func() bool { return b(0) != ' ' && b(0) != '>' }, func() bool {
 							if b(0) == '\\' {
 								if isCharAlphaNumeric(b(1)) {
 									str = append(str, b(0))
 								}
-								m.inc(1)
+								m.Inc(1)
 							}
 
 							str = append(str, b(0))
-							m.inc(1)
+							m.Inc(1)
 							return true
 						})
 					}
@@ -164,19 +164,19 @@ func (comp *compileExs) compile() error {
 					}
 					argName = []byte{}
 
-					m.inc(1)
+					m.Inc(1)
 					return true
 				} else if b(0) == ' ' && len(argName) != 0 {
 					args[string(argName)] = []byte("true")
 					argName = []byte{}
-					m.inc(1)
+					m.Inc(1)
 					return true
 				}
 
 				if b(0) != ' ' {
 					argName = append(argName, b(0))
 				}
-				m.inc(1)
+				m.Inc(1)
 
 				return true
 			})
@@ -187,20 +187,20 @@ func (comp *compileExs) compile() error {
 
 			if b(-1) == '/' {
 				ind[1] = *i + 1
-				m.replace(&ind, comp.embedWedget(name, args))
+				m.Replace(&ind, comp.embedWedget(name, args))
 				return true
 			}
 
 			// get widget content
 
-			m.inc(1)
+			m.Inc(1)
 			cont := []byte{}
-			m.loop(func() bool { return !bytes.Equal(m.getBuf(len(close)), close) }, func() bool {
+			m.Loop(func() bool { return !bytes.Equal(m.GetBuf(len(close)), close) }, func() bool {
 				cont = append(cont, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
-			m.inc(len(close) - 1)
+			m.Inc(len(close) - 1)
 			ind[1] = *i + 1
 
 			compCont := compileExs{buf: &cont}
@@ -208,19 +208,19 @@ func (comp *compileExs) compile() error {
 
 			args["body"] = cont
 
-			m.replace(&ind, comp.embedWedget(name, args))
+			m.Replace(&ind, comp.embedWedget(name, args))
 
 			return true
 		}
 
 		// get <markdown>, <script>, and <style> tags
-		if b(0) == '<' && (bytes.Equal(m.getBuf(3), []byte("<md")) || bytes.Equal(m.getBuf(9), []byte("<markdown"))) {
+		if b(0) == '<' && (bytes.Equal(m.GetBuf(3), []byte("<md")) || bytes.Equal(m.GetBuf(9), []byte("<markdown"))) {
 			var closeTag []byte
-			if bytes.Equal(m.getBuf(3), []byte("<md")) {
-				m.inc(3)
+			if bytes.Equal(m.GetBuf(3), []byte("<md")) {
+				m.Inc(3)
 				closeTag = []byte("</md>")
 			} else {
-				m.inc(9)
+				m.Inc(9)
 				closeTag = []byte("</markdown>")
 			}
 
@@ -228,145 +228,145 @@ func (comp *compileExs) compile() error {
 				return true
 			}
 
-			m.loop(func() bool { return b(0) != '>' }, func() bool {
+			m.Loop(func() bool { return b(0) != '>' }, func() bool {
 				if b(0) == '"' || b(0) == '\'' {
 					q := b(0)
 					str := []byte{}
-					m.inc(1)
+					m.Inc(1)
 					ind := [2]int{*i}
 
-					m.loop(func() bool { return b(0) != q }, func() bool {
+					m.Loop(func() bool { return b(0) != q }, func() bool {
 						if b(0) == '\\' {
 							if b(1) == q || isCharAlphaNumeric(b(1)) {
 								str = append(str, b(0))
 							}
-							m.inc(1)
+							m.Inc(1)
 						}
 
 						str = append(str, b(0))
-						m.inc(1)
+						m.Inc(1)
 						return true
 					})
 					ind[1] = *i
 
 					comp.compStr(q, &str)
-					m.replace(&ind, &str)
+					m.Replace(&ind, &str)
 				}
 
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 
 			md := []byte{}
-			m.inc(1)
+			m.Inc(1)
 			ind := [2]int{*i}
-			m.loop(func() bool { return !bytes.Equal(m.getBuf(len(closeTag)), closeTag) }, func() bool {
+			m.Loop(func() bool { return !bytes.Equal(m.GetBuf(len(closeTag)), closeTag) }, func() bool {
 				md = append(md, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i
 
 			comp.compMarkdown(&md)
-			m.replace(&ind, &md)
+			m.Replace(&ind, &md)
 
 			return true
-		} else if b(0) == '<' && bytes.Equal(m.getBuf(7), []byte("<script")) {
-			m.inc(7)
+		} else if b(0) == '<' && bytes.Equal(m.GetBuf(7), []byte("<script")) {
+			m.Inc(7)
 			if b(0) != '>' && b(0) != ' ' {
 				return true
 			}
 
-			m.loop(func() bool { return b(0) != '>' }, func() bool {
+			m.Loop(func() bool { return b(0) != '>' }, func() bool {
 				if b(0) == '"' || b(0) == '\'' {
 					q := b(0)
 					str := []byte{}
-					m.inc(1)
+					m.Inc(1)
 					ind := [2]int{*i}
 
-					m.loop(func() bool { return b(0) != q }, func() bool {
+					m.Loop(func() bool { return b(0) != q }, func() bool {
 						if b(0) == '\\' {
 							if b(1) == q || isCharAlphaNumeric(b(1)) {
 								str = append(str, b(0))
 							}
-							m.inc(1)
+							m.Inc(1)
 						}
 
 						str = append(str, b(0))
-						m.inc(1)
+						m.Inc(1)
 						return true
 					})
 					ind[1] = *i
 
 					comp.compStr(q, &str)
-					m.replace(&ind, &str)
+					m.Replace(&ind, &str)
 				}
 
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 
 			js := []byte{}
-			m.inc(1)
+			m.Inc(1)
 			ind := [2]int{*i}
-			m.loop(func() bool { return !bytes.Equal(m.getBuf(9), []byte("</script>")) }, func() bool {
+			m.Loop(func() bool { return !bytes.Equal(m.GetBuf(9), []byte("</script>")) }, func() bool {
 				js = append(js, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i
 
 			comp.compJS(&js)
-			m.replace(&ind, &js)
+			m.Replace(&ind, &js)
 
 			return true
-		} else if b(0) == '<' && bytes.Equal(m.getBuf(6), []byte("<style")) {
-			m.inc(6)
+		} else if b(0) == '<' && bytes.Equal(m.GetBuf(6), []byte("<style")) {
+			m.Inc(6)
 			if b(0) != '>' && b(0) != ' ' {
 				return true
 			}
 
-			m.loop(func() bool { return b(0) != '>' }, func() bool {
+			m.Loop(func() bool { return b(0) != '>' }, func() bool {
 				if b(0) == '"' || b(0) == '\'' {
 					q := b(0)
 					str := []byte{}
-					m.inc(1)
+					m.Inc(1)
 					ind := [2]int{*i}
 
-					m.loop(func() bool { return b(0) != q }, func() bool {
+					m.Loop(func() bool { return b(0) != q }, func() bool {
 						if b(0) == '\\' {
 							if b(1) == q || isCharAlphaNumeric(b(1)) {
 								str = append(str, b(0))
 							}
-							m.inc(1)
+							m.Inc(1)
 						}
 
 						str = append(str, b(0))
-						m.inc(1)
+						m.Inc(1)
 						return true
 					})
 					ind[1] = *i
 
 					comp.compStr(q, &str)
-					m.replace(&ind, &str)
+					m.Replace(&ind, &str)
 				}
 
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 
 			css := []byte{}
-			m.inc(1)
+			m.Inc(1)
 			ind := [2]int{*i}
-			m.loop(func() bool { return !bytes.Equal(m.getBuf(8), []byte("</style>")) }, func() bool {
+			m.Loop(func() bool { return !bytes.Equal(m.GetBuf(8), []byte("</style>")) }, func() bool {
 				css = append(css, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i
 
 			comp.compCSS(&css)
-			m.replace(&ind, &css)
+			m.Replace(&ind, &css)
 
 			return true
 		}
@@ -378,29 +378,29 @@ func (comp *compileExs) compile() error {
 }
 
 func (comp *compileExs) compStr(q byte, str *[]byte) {
-	safeFor(str, func(i *int, b func(int) byte, m safeForMethods) bool {
+	goutil.StepBytes(str, func(i *int, b func(int) byte, m goutil.StepBytesMethod) bool {
 		// get {var object}
 		if b(0) == '{' {
 			obj := []byte{}
 			ind := [2]int{*i}
-			m.inc(1)
+			m.Inc(1)
 
-			m.loop(func() bool { return b(0) != '}' }, func() bool {
+			m.Loop(func() bool { return b(0) != '}' }, func() bool {
 				if b(0) == '\\' {
 					if b(1) == q || isCharAlphaNumeric(b(1)) {
 						obj = append(obj, b(0))
 					}
-					m.inc(1)
+					m.Inc(1)
 				}
 
 				obj = append(obj, b(0))
-				m.inc(1)
+				m.Inc(1)
 				return true
 			})
 			ind[1] = *i + 1
 
 			comp.compObj(&obj, true)
-			m.replace(&ind, &obj)
+			m.Replace(&ind, &obj)
 
 			return true
 		}
