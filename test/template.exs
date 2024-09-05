@@ -1,16 +1,16 @@
 defmodule App do
   @map_layout %{
-		"layout" => :_layout_a9uk8eiYqTNd1LCi,
+		"layout" => :_layout_a9ukahF7yf12gnhm,
   } #_MAP_LAYOUT
 
   @map_widget %{
-		"app" => :_app_a9uk85CVGTJwso8g,
+		"app" => :_app_a9ukar5sgCU1cNiW,
   } #_MAP_WIDGET
 
   @map_page %{
-		"404" => :_404_a9uk8zzYmu6vh2Sg,
-		"error" => :_error_a9uk8JGZgVxF8WKi,
-		"index" => :_index_a9uk8gR7lEOByvH4,
+		"404" => :_404_a9uka6ygDrlahjyQ,
+		"error" => :_error_a9ukaFIzgvJwVHcM,
+		"index" => :_index_a9ukaF20P16u0ZZU,
   } #_MAP_PAGE
 
   def render(name, layout, args) do
@@ -107,7 +107,7 @@ defmodule App do
 end
 
 defmodule LAYOUT do
-	def _layout_a9uk8eiYqTNd1LCi(args, cont) do
+	def _layout_a9ukahF7yf12gnhm(args, cont) do
 '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -126,7 +126,7 @@ defmodule LAYOUT do
 end #_LAYOUT
 
 defmodule WIDGET do
-	def _app_a9uk85CVGTJwso8g(args) do
+	def _app_a9ukar5sgCU1cNiW(args) do
 '#{App.escapeHTML args[:n]} * 2 = <%
   args.n * 2
 %>
@@ -135,7 +135,7 @@ defmodule WIDGET do
 end #_WIDGET
 
 defmodule PAGE do
-	def _404_a9uk8zzYmu6vh2Sg(layout, args) do
+	def _404_a9uka6ygDrlahjyQ(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -144,7 +144,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _error_a9uk8JGZgVxF8WKi(layout, args) do
+	def _error_a9ukaFIzgvJwVHcM(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -153,7 +153,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _index_a9uk8gR7lEOByvH4(layout, args) do
+	def _index_a9ukaF20P16u0ZZU(layout, args) do
 		App.layout layout, args, %{
 			head:
 '
