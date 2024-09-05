@@ -117,11 +117,11 @@ func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, e
 
 	lay := []byte("layout")
 	if len(layout) != 0 {
-		lay = goutil.HTML.EscapeArgs([]byte(layout[0]))
+		lay = EscapeExsArgs([]byte(layout[0]), '"')
 	}
 
 	in := regex.JoinBytes(
-		`App.render "`, goutil.HTML.EscapeArgs([]byte(name)), '"',
+		`App.render "`, EscapeExsArgs([]byte(name), '"'), '"',
 		`, "`, lay, `", `, renderExsMap(args), '\n',
 	)
 
@@ -155,9 +155,9 @@ func renderExsMap(args Map) []byte {
 	for key, val := range args {
 		buf = append(buf, []byte(key+": ")...)
 		if v, ok := val.(string); ok {
-			buf = regex.JoinBytes(buf, '"', goutil.HTML.EscapeArgs([]byte(v)), '"', ',')
+			buf = regex.JoinBytes(buf, '"', EscapeExsArgs([]byte(v), '"'), '"', ',')
 		} else if v, ok := val.([]byte); ok {
-			buf = regex.JoinBytes(buf, '"', goutil.HTML.EscapeArgs(v), '"', ',')
+			buf = regex.JoinBytes(buf, '"', EscapeExsArgs(v, '"'), '"', ',')
 		} else if v, ok := val.(Map); ok {
 			buf = regex.JoinBytes(buf, renderExsMap(v), ',')
 		} else if v, ok := val.([]any); ok {
@@ -180,9 +180,9 @@ func renderExsArray(args []any) []byte {
 
 	for _, val := range args {
 		if v, ok := val.(string); ok {
-			buf = regex.JoinBytes(buf, '"', goutil.HTML.EscapeArgs([]byte(v)), '"', ',')
+			buf = regex.JoinBytes(buf, '"', EscapeExsArgs([]byte(v), '"'), '"', ',')
 		} else if v, ok := val.([]byte); ok {
-			buf = regex.JoinBytes(buf, '"', goutil.HTML.EscapeArgs(v), '"', ',')
+			buf = regex.JoinBytes(buf, '"', EscapeExsArgs(v, '"'), '"', ',')
 		} else if v, ok := val.(Map); ok {
 			buf = regex.JoinBytes(buf, renderExsMap(v), ',')
 		} else if v, ok := val.([]any); ok {
