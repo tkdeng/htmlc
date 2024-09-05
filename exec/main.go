@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -83,26 +84,29 @@ func runServer(file string, port string) {
 			url = url[1:]
 		}
 
-		query := bytes.Split([]byte(r.URL.Query().Encode()), []byte{'&'})
-
 		args := htmlc.Map{}
-		for _, arg := range query {
-			a := bytes.SplitN(arg, []byte{'='}, 2)
 
-			if len(a) == 1 || bytes.Equal(a[1], []byte("true")) {
-				args[string(a[0])] = true
-			} else if bytes.Equal(a[1], []byte("false")) {
-				args[string(a[0])] = false
-			} else if bytes.Equal(a[1], []byte("nil")) || bytes.Equal(a[1], []byte("null")) {
-				args[string(a[0])] = nil
-			} else if regex.CompRE2(`^[0-9]+(\.[0-9]+|)$`).Match(a[1]) {
-				if i, e := strconv.Atoi(string(a[1])); e == nil {
-					args[string(a[0])] = i
+		e := []byte(r.URL.Query().Encode())
+		if len(e) != 0 {
+			query := bytes.Split(e, []byte{'&'})
+			for _, arg := range query {
+				a := bytes.SplitN(arg, []byte{'='}, 2)
+	
+				if len(a) == 1 || bytes.Equal(a[1], []byte("true")) {
+					args[string(a[0])] = true
+				} else if bytes.Equal(a[1], []byte("false")) {
+					args[string(a[0])] = false
+				} else if bytes.Equal(a[1], []byte("nil")) || bytes.Equal(a[1], []byte("null")) {
+					args[string(a[0])] = nil
+				} else if regex.CompRE2(`^[0-9]+(\.[0-9]+|)$`).Match(a[1]) {
+					if i, e := strconv.Atoi(string(a[1])); e == nil {
+						args[string(a[0])] = i
+					} else {
+						args[string(a[0])] = a[1]
+					}
 				} else {
 					args[string(a[0])] = a[1]
 				}
-			} else {
-				args[string(a[0])] = a[1]
 			}
 		}
 
@@ -129,6 +133,7 @@ func runServer(file string, port string) {
 		w.Write(buf)
 	})
 
+	fmt.Println("Running HTTP Server On Port:", port)
 	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		panic(err)

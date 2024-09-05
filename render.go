@@ -65,7 +65,7 @@ func Engine(file string) (*ExsEngine, error) {
 
 			buf = buf[:n]
 
-			if regex.CompRE2(`(?i)^\s*iex\s*\(.*?\)\s*>`).Match(buf) {
+			if regex.CompRE2(`(?im)^\s*iex\s*\(.*?\)\s*>`).Match(buf) || regex.CompRE2(`(?im)^\s*nil`).Match(buf) {
 				continue
 			}
 
@@ -163,7 +163,7 @@ func renderExsMap(args Map) []byte {
 		} else if v, ok := val.([]any); ok {
 			buf = regex.JoinBytes(buf, renderExsArray(v), ',')
 		} else {
-			buf = regex.JoinBytes(buf, goutil.ToType[[]byte](v), ',')
+			buf = regex.JoinBytes(buf, goutil.ToType[[]byte](val), ',')
 		}
 	}
 
