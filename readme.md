@@ -9,6 +9,8 @@ This module is just another templating engine, and a really fast one.
 With elixir, we can leverage its unique ability to call individual functions in `iex` mode.
 Elixir can quickly build templates on the fly, with our html stored in binary strings.
 
+## Notice: This Project Is Still Under Development, and not all features in the readme are available yet
+
 ## Installation
 
 ```shell
