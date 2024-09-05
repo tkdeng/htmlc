@@ -34,7 +34,9 @@ func Compile(src string, out string) error {
 
 	outfile.Write(template)
 
-	if err = compileDir(outfile, src, "", 'r'); err != nil {
+	usedRandID := [][]byte{}
+
+	if err = compileDir(outfile, src, "", 'r', &usedRandID); err != nil {
 		return err
 	}
 
@@ -57,7 +59,7 @@ func Compile(src string, out string) error {
 	return nil
 }
 
-func compileDir(out *os.File, dir string, name string, dirType byte) error {
+func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID *[][]byte) error {
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -68,28 +70,28 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 				if dirType == 'r' {
 					switch file.Name() {
 					case "layouts", "layout":
-						if err = compileDir(out, path, "", 'l'); err != nil {
+						if err = compileDir(out, path, "", 'l', usedRandID); err != nil {
 							return err
 						}
 					case "widgets", "widget":
-						if err = compileDir(out, path, "", 'w'); err != nil {
+						if err = compileDir(out, path, "", 'w', usedRandID); err != nil {
 							return err
 						}
 					case "pages", "page":
-						if err = compileDir(out, path, "", 'p'); err != nil {
+						if err = compileDir(out, path, "", 'p', usedRandID); err != nil {
 							return err
 						}
 					case "errors", "error":
-						if err = compileDir(out, path, "", 'e'); err != nil {
+						if err = compileDir(out, path, "", 'e', usedRandID); err != nil {
 							return err
 						}
 					default:
-						if err = compileDir(out, path, file.Name(), 'd'); err != nil {
+						if err = compileDir(out, path, file.Name(), 'd', usedRandID); err != nil {
 							return err
 						}
 					}
 				} else {
-					if err = compileDir(out, path, name+"/"+file.Name(), dirType); err != nil {
+					if err = compileDir(out, path, name+"/"+file.Name(), dirType, usedRandID); err != nil {
 						return err
 					}
 				}
@@ -110,13 +112,13 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 						if err := comp.compile(); err != nil {
 							return err
 						}
-						loadLayout(out, n, &buf)
+						loadLayout(out, n, &buf, usedRandID)
 					} else if dirType == 'w' {
 						comp := compileExs{buf: &buf}
 						if err := comp.compile(); err != nil {
 							return err
 						}
-						loadWidget(out, n, &buf)
+						loadWidget(out, n, &buf, usedRandID)
 					} else if dirType == 'p' || dirType == 'e' {
 						buf_page := map[string][]byte{}
 
@@ -141,7 +143,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 							}
 							buf_page[k] = b
 						}
-						loadPage(out, n, &buf_page)
+						loadPage(out, n, &buf_page, usedRandID)
 					} else {
 						var buf_layout []byte
 						buf_page := map[string][]byte{}
@@ -166,7 +168,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 							if err := comp.compile(); err != nil {
 								return err
 							}
-							loadLayout(out, n, &buf_layout)
+							loadLayout(out, n, &buf_layout, usedRandID)
 						}
 
 						if len(buf_page) != 0 {
@@ -177,7 +179,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 								}
 								buf_page[k] = b
 							}
-							loadPage(out, n, &buf_page)
+							loadPage(out, n, &buf_page, usedRandID)
 						}
 
 						if len(buf) != 0 && len(regex.Comp(`(?s)[\s\r\n\t ]+`).RepStrLit(buf, []byte{})) != 0 {
@@ -185,7 +187,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte) error {
 							if err := comp.compile(); err != nil {
 								return err
 							}
-							loadWidget(out, n, &buf)
+							loadWidget(out, n, &buf, usedRandID)
 						}
 					}
 				}

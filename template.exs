@@ -1,12 +1,12 @@
 defmodule App do
   @map_layout %{
-  } #_map_layout
+  } #_MAP_LAYOUT
 
   @map_widget %{
-  } #_map_widget
+  } #_MAP_WIDGET
 
   @map_page %{
-  } #_map_page
+  } #_MAP_PAGE
 
   def render(name, layout, args) do
     cond do

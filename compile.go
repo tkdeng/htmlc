@@ -421,7 +421,7 @@ func (comp *compileExs) compObj(obj *[]byte, inStr bool) {
 		}
 		*obj = (*obj)[1:]
 
-		v = append(v, regex.CompRE2(`[^\w_]+`).RepStrLit(*obj, []byte{})...)
+		v = append(v, regex.CompRE2(`[^\w_]`).RepStrLit(*obj, []byte{})...)
 		v = append(v, ']', '}')
 		*obj = v
 		return
@@ -450,7 +450,7 @@ func (comp *compileExs) compObj(obj *[]byte, inStr bool) {
 
 	arg := bytes.Split(*obj, []byte{'.'})
 	for _, a := range arg {
-		a = regex.CompRE2(`[^\w_]+`).RepStrLit(a, []byte{})
+		a = regex.CompRE2(`[^\w_]`).RepStrLit(a, []byte{})
 		if len(a) != 0 {
 			v = append(v, '[', ':')
 			v = append(v, a...)
@@ -479,8 +479,27 @@ func (comp *compileExs) compCSS(md *[]byte) {
 }
 
 func (comp *compileExs) embedWedget(name []byte, args map[string][]byte) *[]byte {
+	name = bytes.ReplaceAll(name, []byte{'.'}, []byte{'/'})
 
-	//todo: return #{elixir} script for widget
+	buf := regex.JoinBytes(`#{App.widget "`, name, `", Map.merge(args, %{`, '\n')
 
-	return &[]byte{}
+	for key, val := range args {
+		buf = regex.JoinBytes(buf, '\t', regex.CompRE2(`[^\w_]`).RepStrLit([]byte(key), []byte{}), `: `)
+
+		if regex.CompRE2(`^([0-9]+(\.[0-9]+|)|true|false|nil|null)$`).Match(val) {
+			if bytes.Equal(val, []byte("null")) {
+				buf = append(buf, []byte("nil")...)
+			} else {
+				buf = append(buf, val...)
+			}
+		} else {
+			buf = regex.JoinBytes(buf, '"', goutil.HTML.EscapeArgs(val, '"'), '"')
+		}
+
+		buf = append(buf, ',', '\n')
+	}
+
+	buf = append(buf, '}', ')', '}')
+
+	return &buf
 }

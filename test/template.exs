@@ -1,12 +1,17 @@
 defmodule App do
   @map_layout %{
-  } #_map_layout
+		"layout" => :_layout_a9uf7y2UjZWph3kS,
+  } #_MAP_LAYOUT
 
   @map_widget %{
-  } #_map_widget
+		"app" => :_app_a9uf7vzjNVR9G08c,
+  } #_MAP_WIDGET
 
   @map_page %{
-  } #_map_page
+		"404" => :_404_a9uf702fw7kFsb5W,
+		"error" => :_error_a9uf7bVMzNKW6TjM,
+		"index" => :_index_a9uf7e70icRtcQJT,
+  } #_MAP_PAGE
 
   def render(name, layout, args) do
     cond do
@@ -79,10 +84,76 @@ defmodule App do
 end
 
 defmodule LAYOUT do
+	def _layout_a9uf7y2UjZWph3kS(args, cont) do
+'<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0"/>
+  <meta name="description" content="#{App.escapeArg args[:desc]}"/>
+  <title>#{App.escapeHTML args[:title]}</title>
+  #{cont[:head]}
+</head>
+<body>
+  #{cont[:body]}
+</body>
+</html>
+'
+	end
 end #_LAYOUT
 
 defmodule WIDGET do
+	def _app_a9uf7vzjNVR9G08c(args) do
+'#{App.escapeHTML args[:n]} * 2 = <%
+  args.n * 2
+%>
+'
+	end
 end #_WIDGET
 
 defmodule PAGE do
+	def _404_a9uf702fw7kFsb5W(layout, args) do
+		App.layout layout, args, %{
+			body:
+'
+  <h1>Error 404</h1>
+  <h2>Page Not Found!</h2>
+',
+		}
+	end
+	def _error_a9uf7bVMzNKW6TjM(layout, args) do
+		App.layout layout, args, %{
+			body:
+'
+  <h1>Error #{App.escapeHTML args[:status]}</h1>
+  <h2>#{App.escapeHTML args[:error]}</h2>
+',
+		}
+	end
+	def _index_a9uf7e70icRtcQJT(layout, args) do
+		App.layout layout, args, %{
+			body:
+'
+  <h1>Hello, World</h1>
+  #{App.widget "app", Map.merge(args, %{
+	n: 2,
+	body: "
+    widget body
+  ",
+})}
+
+  <main if="main">
+    #{args[:main]}
+  </main>
+
+  <ul each="menu">
+    <li><a href="#{this[:url]}">#{this[:name]}</a></li>
+  </ul>
+',
+			head:
+'
+  <link rel="stylesheet" href="/style.css">
+',
+		}
+	end
 end #_PAGE
