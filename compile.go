@@ -24,6 +24,19 @@ func (comp *compileExs) compile() error {
 	comp.clean()
 
 	goutil.StepBytes(comp.buf, func(i *int, b func(int) byte, m goutil.StepBytesMethod) bool {
+		// skip <!-- comments -->
+		if bytes.Equal(m.GetBuf(4), []byte("<!--")) {
+			m.Inc(4)
+
+			m.Loop(func() bool { return !bytes.Equal(m.GetBuf(3), []byte("-->")) }, func() bool {
+				m.Inc(1)
+				return true
+			})
+			m.Inc(2)
+
+			return true
+		}
+
 		// get "string"
 		if b(0) == '"' || b(0) == '\'' {
 			q := b(0)

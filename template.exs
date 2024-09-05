@@ -68,28 +68,36 @@ defmodule App do
   end
 
   def escapeHTML(arg) do
-    String.replace(arg, ~r/[<>&]/, fn (c) ->
-      cond do
-        c == "<" ->
-          "&lt;"
-        c == ">" ->
-          "&gt;"
-        c == "&" ->
-          "&amp;"
-        true ->
-          ""
-      end
-    end) |> String.replace(~r/&amp;(amp;)*/, "&amp;")
+    if is_bitstring(arg) do
+      String.replace(arg, ~r/[<>&]/, fn (c) ->
+        cond do
+          c == "<" ->
+            "&lt;"
+          c == ">" ->
+            "&gt;"
+          c == "&" ->
+            "&amp;"
+          true ->
+            ""
+        end
+      end) |> String.replace(~r/&amp;(amp;)*/, "&amp;")
+    else
+      arg
+    end
   end
 
   def escapeArg(arg) do
-    String.replace(arg, ~r/([\\]*)([\\"'])/, fn (c) ->
-      if rem(String.length(c), 2) == 0 do
-        "#{c}"
-      else
-        "\\#{c}"
-      end
-    end)
+    if is_bitstring(arg) do
+      String.replace(arg, ~r/([\\]*)([\\"'])/, fn (c) ->
+        if rem(String.length(c), 2) == 0 do
+          "#{c}"
+        else
+          "\\#{c}"
+        end
+      end)
+    else
+      arg
+    end
   end
 end
 

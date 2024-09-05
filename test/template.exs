@@ -1,16 +1,16 @@
 defmodule App do
   @map_layout %{
-		"layout" => :_layout_a9uh5MTl0pszCrA6,
+		"layout" => :_layout_a9ujt2OGmdcECzx3,
   } #_MAP_LAYOUT
 
   @map_widget %{
-		"app" => :_app_a9uh58DahcA7VPBB,
+		"app" => :_app_a9ujtdoFcmGYvvxi,
   } #_MAP_WIDGET
 
   @map_page %{
-		"404" => :_404_a9uh5HX9W2Toe31a,
-		"error" => :_error_a9uh5XNYLQvtmBfK,
-		"index" => :_index_a9uh5L4DrL4GA5Ox,
+		"404" => :_404_a9ujtUspfbf2A61d,
+		"error" => :_error_a9ujtLsp5QioM4X4,
+		"index" => :_index_a9ujtJtosoWldIGm,
   } #_MAP_PAGE
 
   def render(name, layout, args) do
@@ -73,33 +73,41 @@ defmodule App do
   end
 
   def escapeHTML(arg) do
-    String.replace(arg, ~r/[<>&]/, fn (c) ->
-      cond do
-        c == "<" ->
-          "&lt;"
-        c == ">" ->
-          "&gt;"
-        c == "&" ->
-          "&amp;"
-        true ->
-          ""
-      end
-    end) |> String.replace(~r/&amp;(amp;)*/, "&amp;")
+    if is_bitstring(arg) do
+      String.replace(arg, ~r/[<>&]/, fn (c) ->
+        cond do
+          c == "<" ->
+            "&lt;"
+          c == ">" ->
+            "&gt;"
+          c == "&" ->
+            "&amp;"
+          true ->
+            ""
+        end
+      end) |> String.replace(~r/&amp;(amp;)*/, "&amp;")
+    else
+      arg
+    end
   end
 
   def escapeArg(arg) do
-    String.replace(arg, ~r/([\\]*)([\\"'])/, fn (c) ->
-      if rem(String.length(c), 2) == 0 do
-        "#{c}"
-      else
-        "\\#{c}"
-      end
-    end)
+    if is_bitstring(arg) do
+      String.replace(arg, ~r/([\\]*)([\\"'])/, fn (c) ->
+        if rem(String.length(c), 2) == 0 do
+          "#{c}"
+        else
+          "\\#{c}"
+        end
+      end)
+    else
+      arg
+    end
   end
 end
 
 defmodule LAYOUT do
-	def _layout_a9uh5MTl0pszCrA6(args, cont) do
+	def _layout_a9ujt2OGmdcECzx3(args, cont) do
 '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,7 +126,7 @@ defmodule LAYOUT do
 end #_LAYOUT
 
 defmodule WIDGET do
-	def _app_a9uh58DahcA7VPBB(args) do
+	def _app_a9ujtdoFcmGYvvxi(args) do
 '#{App.escapeHTML args[:n]} * 2 = <%
   args.n * 2
 %>
@@ -127,7 +135,7 @@ defmodule WIDGET do
 end #_WIDGET
 
 defmodule PAGE do
-	def _404_a9uh5HX9W2Toe31a(layout, args) do
+	def _404_a9ujtUspfbf2A61d(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -136,7 +144,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _error_a9uh5XNYLQvtmBfK(layout, args) do
+	def _error_a9ujtLsp5QioM4X4(layout, args) do
 		App.layout layout, args, %{
 			body:
 '
@@ -145,7 +153,7 @@ defmodule PAGE do
 ',
 		}
 	end
-	def _index_a9uh5L4DrL4GA5Ox(layout, args) do
+	def _index_a9ujtJtosoWldIGm(layout, args) do
 		App.layout layout, args, %{
 			head:
 '
@@ -155,19 +163,19 @@ defmodule PAGE do
 '
   <h1>Hello, World</h1>
   #{App.widget "app", Map.merge(args, %{
-	n: 2,
 	body: "
     widget body
   ",
+	n: 2,
 })}
 
   <main if="main">
     #{args[:main]}
   </main>
 
-  <ul each="menu">
-    <li><a href="#{this[:url]}">#{this[:name]}</a></li>
-  </ul>
+  <!-- <ul each="menu">
+    <li><a href="{#url}">{#name}</a></li>
+  </ul> -->
 ',
 		}
 	end

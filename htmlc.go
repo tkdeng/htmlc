@@ -40,22 +40,6 @@ func Compile(src string, out string) error {
 		return err
 	}
 
-	//todo: compile templates to elixir (dist)
-	// may detect contents for diff between pages/layouts/widgets
-	//
-	// `<!DOCTYPE> | <html></html>` tags for layouts
-	//
-	// `<_@body></_@body>` @embed tags for pages
-	//
-	// outside html tags and @embed tags for widgets
-	//
-	// for error type, detect files names `error.html` and `404.html`
-	// automatic 404 errors should try to reference relative to the directory the file was called from
-	// error type can be treated in a similar way to page type
-
-	//todo: may consider returning a struct for render method
-	// may also add a file watcher, and have a stop method in the struct
-
 	return nil
 }
 
@@ -104,8 +88,6 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 						n += "/"
 					}
 					n += strings.TrimSuffix(file.Name(), ".html")
-
-					// strList := pullStrings(&buf)
 
 					if dirType == 'l' {
 						comp := compileExs{buf: &buf}
