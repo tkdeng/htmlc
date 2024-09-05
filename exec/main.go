@@ -52,7 +52,6 @@ func main() {
 		htmlc.Compile(src, out)
 	}
 
-	//todo: add optional render method if port != ""
 	if port != "" {
 		runServer(out, port)
 	}
@@ -91,7 +90,7 @@ func runServer(file string, port string) {
 			query := bytes.Split(e, []byte{'&'})
 			for _, arg := range query {
 				a := bytes.SplitN(arg, []byte{'='}, 2)
-	
+
 				if len(a) == 1 || bytes.Equal(a[1], []byte("true")) {
 					args[string(a[0])] = true
 				} else if bytes.Equal(a[1], []byte("false")) {
