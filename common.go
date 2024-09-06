@@ -1,6 +1,9 @@
 package htmlc
 
 import (
+	"bytes"
+	"encoding/base64"
+
 	regex "github.com/tkdeng/goregex"
 	"github.com/tkdeng/goutil"
 )
@@ -23,4 +26,16 @@ func EscapeExsArgs(html []byte, quote ...byte) []byte {
 		}
 		return data(0)
 	})
+}
+
+func encodeBit(ind *[2]int, buf *[]byte) []byte {
+	/* bit := []byte(fmt.Sprintf("%#v", (*buf)[ind[0]:ind[1]]))
+	bit = bytes.TrimPrefix(bit, []byte(`[]byte{`))
+	bit = bytes.TrimSuffix(bit, []byte(`}`)) */
+
+	bit := make([]byte, (ind[1]-ind[0])*2)
+	base64.StdEncoding.Encode(bit, (*buf)[ind[0]:ind[1]])
+	bit = bytes.ReplaceAll(bit, []byte{0}, []byte{})
+
+	return regex.JoinBytes(`<<`, bit, `>>`)
 }

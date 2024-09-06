@@ -109,6 +109,7 @@ func runServer(file string, port string) {
 			}
 		}
 
+		// w.Header().Set("Content-Encoding", "gzip")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		buf, err := exs.Render(url, args)

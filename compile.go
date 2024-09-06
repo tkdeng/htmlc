@@ -387,6 +387,52 @@ func (comp *compileExs) compile() error {
 		return true
 	})
 
+	ind := [2]int{0, 0}
+	goutil.StepBytes(comp.buf, func(i *int, b func(int) byte, m goutil.StepBytesMethod) bool {
+		if b(0) == '#' && b(1) == '{' {
+			ind[1] = *i
+
+			if ind[1]-ind[0] > 0 {
+				bit := encodeBit(&ind, comp.buf)
+				// bit := regex.JoinBytes(`#{`, encodeBit(&ind, comp.buf), `}`)
+				m.Replace(&ind, &bit)
+			}
+
+			m.Inc(2)
+
+			ins := 0
+			m.Loop(func() bool { return b(0) != '}' || ins != 0 }, func() bool {
+				if b(0) == '{' {
+					ins++
+				} else if b(0) == '}' {
+					ins--
+				}
+
+				m.Inc(1)
+				return true
+			})
+
+			ind[0] = *i + 1
+			return true
+		}
+
+		if *i == len(*comp.buf)-1 {
+			ind[1] = *i
+
+			if ind[1]-ind[0] > 0 {
+				bit := encodeBit(&ind, comp.buf)
+				// bit := regex.JoinBytes(`#{`, encodeBit(&ind, comp.buf), `}`)
+				m.Replace(&ind, &bit)
+			}
+		}
+
+		return true
+	})
+
+	if (*comp.buf)[len(*comp.buf)-1] == '\n' {
+		*comp.buf = (*comp.buf)[:len(*comp.buf)-1]
+	}
+
 	return nil
 }
 

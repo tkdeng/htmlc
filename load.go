@@ -24,7 +24,13 @@ func loadLayout(out *os.File, name string, buf *[]byte, usedRandID *[][]byte) {
 
 	regex.Comp(`(?ms)^([\s\t]*end[\s\t]*#_LAYOUT)$`).RepFileStr(out, regex.JoinBytes(
 		"\t", `def `, randID, `(args, cont) do`, '\n',
-		'\'', goutil.HTML.EscapeArgs(*buf, '\''), '\'',
+		// '\'', goutil.HTML.EscapeArgs(*buf, '\''), '\'',
+		// '"', goutil.HTML.EscapeArgs(*buf, '"'), '"',
+
+		"\t\t", '"', *buf, '"',
+		// "\t\t", '\'', *buf, '\'',
+		// `"#{<<`, *buf, `>>}"`,
+
 		"\n\tend",
 		"\n$1",
 	), false)
@@ -46,7 +52,13 @@ func loadWidget(out *os.File, name string, buf *[]byte, usedRandID *[][]byte) {
 
 	regex.Comp(`(?ms)^([\s\t]*end[\s\t]*#_WIDGET)$`).RepFileStr(out, regex.JoinBytes(
 		"\t", `def `, randID, `(args) do`, '\n',
-		'\'', goutil.HTML.EscapeArgs(*buf, '\''), '\'',
+		// '\'', goutil.HTML.EscapeArgs(*buf, '\''), '\'',
+		// '"', goutil.HTML.EscapeArgs(*buf, '"'), '"',
+
+		"\t\t", '"', *buf, '"',
+		// "\t\t", '\'', *buf, '\'',
+		// `"#{<<`, *buf, `>>}"`,
+
 		"\n\tend",
 		"\n$1",
 	), false)
@@ -73,8 +85,13 @@ func loadPage(out *os.File, name string, buf *map[string][]byte, usedRandID *[][
 
 	for key, val := range *buf {
 		resBuf = regex.JoinBytes(resBuf,
-			"\t\t\t", regex.CompRE2(`[^\w_]`).RepStrLit([]byte(key), []byte{}), ":\n",
-			'\'', goutil.HTML.EscapeArgs(val, '\''), '\'', ",\n",
+			"\t\t\t", regex.CompRE2(`[^\w_]`).RepStrLit([]byte(key), []byte{}), ": ",
+			// '"', goutil.HTML.EscapeArgs(val, '"'), '"', ",\n",
+			// '"', goutil.HTML.EscapeArgs(val, '"'), '"', ",\n",
+
+			'"', val, '"', ",\n",
+			// '\'', val, '\'', ",\n",
+			// `"#{<<`, val, `>>}"`, ",\n",
 		)
 	}
 

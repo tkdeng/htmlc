@@ -2,7 +2,9 @@ package htmlc
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"os/exec"
 	"sync"
@@ -27,7 +29,7 @@ var ErrorStopped error = errors.New("elixir cmd stopped running")
 var ErrorTimeout error = errors.New("request timed out")
 
 func Engine(file string) (*ExsEngine, error) {
-	cmd := exec.Command(`iex`, file)
+	cmd := exec.Command(`elixir`, file)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -56,37 +58,32 @@ func Engine(file string) (*ExsEngine, error) {
 				break
 			}
 			if err != nil {
+				fmt.Println(err)
 				continue
 			}
 
 			if !ready {
 				continue
 			}
-
 			buf = buf[:n]
 
-			if regex.CompRE2(`(?im)^\s*iex\s*\(.*?\)\s*>`).Match(buf) || regex.CompRE2(`(?im)^\s*nil`).Match(buf) {
-				continue
-			}
-
-			hasOut := false
-			regex.CompRE2(`~c"((?:\\"|.)*?)"`).RepFunc(buf, func(data func(int) []byte) []byte {
-				if hasOut {
-					return nil
+			buf = regex.CompRE2(`(?s)<<(.*?)>>`).RepFunc(buf, func(data func(int) []byte) []byte {
+				bit := make([]byte, len(data(1)))
+				if _, err := base64.StdEncoding.Decode(bit, data(1)); err != nil {
+					bit, _ = base64.StdEncoding.DecodeString(string(data(1)))
 				}
-				out <- bytes.ReplaceAll(data(1), []byte("\\n"), []byte("\n"))
-				hasOut = true
-				return nil
+				bytes.ReplaceAll(bit, []byte{0}, []byte{})
+				return bit
 			})
 
-			if !hasOut {
-				out <- []byte("<h1>Error 500</h1><h2>Elixir Template Error!</h2>")
-			}
+			// out <- bytes.ReplaceAll(buf, []byte("\\n"), []byte("\n"))
+			out <- buf
 		}
 
 		running = false
 		stdin.Close()
 		stdout.Close()
+		fmt.Println("htmlc engine stopped")
 	}()
 
 	err = cmd.Start()
@@ -117,18 +114,26 @@ func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, e
 
 	lay := []byte("layout")
 	if len(layout) != 0 {
-		lay = EscapeExsArgs([]byte(layout[0]), '"')
+		lay = regex.CompRE2(`["'\']`).RepStrLit([]byte(layout[0]), []byte{})
 	}
 
+	json, err := goutil.JSON.Stringify(args)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	bit := make([]byte, len(json)*2)
+	base64.StdEncoding.Encode(bit, json)
+	regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{})
+
 	in := regex.JoinBytes(
-		`App.render "`, EscapeExsArgs([]byte(name), '"'), '"',
-		`, "`, lay, `", `, renderExsMap(args), '\n',
+		`:render,`,
+		regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{}), ',',
+		lay, ',', bit,
+		'\n',
 	)
 
-	in = append(in, []byte("\n")...)
-
 	var out []byte
-
 	go func() {
 		exs.mu.Lock()
 		defer exs.mu.Unlock()
@@ -149,53 +154,108 @@ func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, e
 	return out, nil
 }
 
-func renderExsMap(args Map) []byte {
-	buf := []byte("%{")
+func (exs *ExsEngine) Layout(name string, args Map, cont ...map[string]string) ([]byte, error) {
+	if !*exs.running {
+		return []byte{}, ErrorStopped
+	}
 
-	for key, val := range args {
-		buf = append(buf, []byte(key+": ")...)
-		if v, ok := val.(string); ok {
-			buf = regex.JoinBytes(buf, '"', EscapeExsArgs([]byte(v), '"'), '"', ',')
-		} else if v, ok := val.([]byte); ok {
-			buf = regex.JoinBytes(buf, '"', EscapeExsArgs(v, '"'), '"', ',')
-		} else if v, ok := val.(Map); ok {
-			buf = regex.JoinBytes(buf, renderExsMap(v), ',')
-		} else if v, ok := val.([]any); ok {
-			buf = regex.JoinBytes(buf, renderExsArray(v), ',')
-		} else {
-			buf = regex.JoinBytes(buf, goutil.ToType[[]byte](val), ',')
+	json, err := goutil.JSON.Stringify(args)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	var contStr []byte
+	if len(cont) != 0 {
+		contStr, err = goutil.JSON.Stringify(cont[0])
+		if err != nil {
+			return []byte{}, err
 		}
 	}
 
-	if buf[len(buf)-1] == ',' {
-		buf = buf[:len(buf)-1]
+	bit := make([]byte, len(json)*2)
+	base64.StdEncoding.Encode(bit, json)
+	regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{})
+
+	var in []byte
+	if contStr != nil {
+		contBit := make([]byte, len(contStr)*2)
+		base64.StdEncoding.Encode(contBit, contStr)
+		regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{})
+
+		in = regex.JoinBytes(
+			`:layout,`,
+			regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{}), ',',
+			bit, ',', contBit,
+			'\n',
+		)
+	} else {
+		in = regex.JoinBytes(
+			`:layout,`,
+			regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{}), ',',
+			bit,
+			'\n',
+		)
 	}
 
-	buf = append(buf, '}')
-	return buf
+	var out []byte
+	go func() {
+		exs.mu.Lock()
+		defer exs.mu.Unlock()
+		exs.stdin.Write(in)
+		out = <-exs.out
+		time.Sleep(10 * time.Nanosecond)
+	}()
+
+	start := time.Now().UnixMilli()
+	for len(out) == 0 && time.Now().UnixMilli()-start < 10*1000 {
+		time.Sleep(10 * time.Nanosecond)
+	}
+
+	if len(out) == 0 {
+		return []byte{}, ErrorTimeout
+	}
+
+	return out, nil
 }
 
-func renderExsArray(args []any) []byte {
-	buf := []byte("[")
-
-	for _, val := range args {
-		if v, ok := val.(string); ok {
-			buf = regex.JoinBytes(buf, '"', EscapeExsArgs([]byte(v), '"'), '"', ',')
-		} else if v, ok := val.([]byte); ok {
-			buf = regex.JoinBytes(buf, '"', EscapeExsArgs(v, '"'), '"', ',')
-		} else if v, ok := val.(Map); ok {
-			buf = regex.JoinBytes(buf, renderExsMap(v), ',')
-		} else if v, ok := val.([]any); ok {
-			buf = regex.JoinBytes(buf, renderExsArray(v), ',')
-		} else {
-			buf = regex.JoinBytes(buf, goutil.ToType[[]byte](v), ',')
-		}
+func (exs *ExsEngine) Widget(name string, args Map) ([]byte, error) {
+	if !*exs.running {
+		return []byte{}, ErrorStopped
 	}
 
-	if buf[len(buf)-1] == ',' {
-		buf = buf[:len(buf)-1]
+	json, err := goutil.JSON.Stringify(args)
+	if err != nil {
+		return []byte{}, err
 	}
 
-	buf = append(buf, ']')
-	return buf
+	bit := make([]byte, len(json)*2)
+	base64.StdEncoding.Encode(bit, json)
+	regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{})
+
+	in := regex.JoinBytes(
+		`:render,`,
+		regex.CompRE2(`["'\']`).RepStrLit([]byte(name), []byte{}), ',',
+		bit,
+		'\n',
+	)
+
+	var out []byte
+	go func() {
+		exs.mu.Lock()
+		defer exs.mu.Unlock()
+		exs.stdin.Write(in)
+		out = <-exs.out
+		time.Sleep(10 * time.Nanosecond)
+	}()
+
+	start := time.Now().UnixMilli()
+	for len(out) == 0 && time.Now().UnixMilli()-start < 10*1000 {
+		time.Sleep(10 * time.Nanosecond)
+	}
+
+	if len(out) == 0 {
+		return []byte{}, ErrorTimeout
+	}
+
+	return out, nil
 }
