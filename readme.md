@@ -49,13 +49,13 @@ and "--out" is set to the same directory, with the file name set to the base fol
 You can also call this method without the "--src" or "--port"
 
 ```shell
-./htmlc --src="/var/www/html"
+./htmlc /var/www/html
 # is equivalent to
 ./htmlc --src="/var/www/html"
 
-./htmlc --port="3000"
-# is equivalent to
 ./htmlc 3000
+# is equivalent to
+./htmlc --port="3000"
 
 # so you can use the method like this
 ./htmlc /var/www/html 3000
