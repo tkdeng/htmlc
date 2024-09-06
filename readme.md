@@ -162,4 +162,13 @@ iex> System.halt
     args.n * 2
   %>
 </div>
+
+<!-- markdown not yet implemented -->
+<md>
+  Markdown
+</md>
+
+<markdown>
+  Markdown
+</markdown>
 ```
