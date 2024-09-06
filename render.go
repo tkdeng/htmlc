@@ -67,16 +67,32 @@ func Engine(file string) (*ExsEngine, error) {
 			}
 			buf = buf[:n]
 
-			buf = regex.CompRE2(`(?s)<<(.*?)>>`).RepFunc(buf, func(data func(int) []byte) []byte {
-				bit := make([]byte, len(data(1)))
-				if _, err := base64.StdEncoding.Decode(bit, data(1)); err != nil {
-					bit, _ = base64.StdEncoding.DecodeString(string(data(1)))
+			if IexMode {
+				if regex.CompRE2(`(?m)^\s*iex\s*\([0-9]+\)\s*>`).Match(buf) {
+					continue
 				}
-				bytes.ReplaceAll(bit, []byte{0}, []byte{})
-				return bit
-			})
 
-			// out <- bytes.ReplaceAll(buf, []byte("\\n"), []byte("\n"))
+				hasData := false
+				regex.CompRE2(`(?s)(?:~c|)"(.*)"`).RepFunc(buf, func(data func(int) []byte) []byte {
+					buf = bytes.ReplaceAll(data(1), []byte("\\n"), []byte("\n"))
+					hasData = true
+					return nil
+				})
+
+				if !hasData {
+					buf = []byte("<h1>Error 500</h1><h2>Internal Server Error!</h2>")
+				}
+			} else {
+				buf = regex.CompRE2(`(?s)<<(.*?)>>`).RepFunc(buf, func(data func(int) []byte) []byte {
+					bit := make([]byte, len(data(1)))
+					if _, err := base64.StdEncoding.Decode(bit, data(1)); err != nil {
+						bit, _ = base64.StdEncoding.DecodeString(string(data(1)))
+					}
+					bytes.ReplaceAll(bit, []byte{0}, []byte{})
+					return bit
+				})
+			}
+
 			out <- buf
 		}
 

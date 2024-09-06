@@ -17,6 +17,8 @@ import (
 //go:embed template.exs
 var template []byte
 
+var IexMode bool = false
+
 func Compile(src string, out string) error {
 	if stat, err := os.Stat(src); err != nil || !stat.IsDir() {
 		return errors.Join(err, os.ErrNotExist, errors.New("src \""+src+"\": directory not found"))
@@ -33,6 +35,11 @@ func Compile(src string, out string) error {
 	defer outfile.Close()
 
 	outfile.Write(template)
+
+	if IexMode {
+		regex.Comp(`(?m)^[\s\t]*def\s+listen\(\)\s*do([\r\n]|.)*?^[\s\t]*end\s*#_LISTEN\r?\n?`).RepFileStr(outfile, []byte{}, false, 1024*1024)
+		regex.Comp(`(?m)^[\s\t]*App.listen\(\)\r?\n?`).RepFileStr(outfile, []byte{}, false)
+	}
 
 	usedRandID := [][]byte{}
 

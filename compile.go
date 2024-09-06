@@ -552,7 +552,7 @@ func (comp *compileExs) embedWedget(name []byte, args map[string][]byte) *[]byte
 				buf = append(buf, val...)
 			}
 		} else {
-			buf = regex.JoinBytes(buf, '"', goutil.HTML.EscapeArgs(val, '"'), '"')
+			buf = regex.JoinBytes(buf, '"', EscapeExsArgs(val, '"'), '"')
 		}
 
 		buf = append(buf, ',', '\n')

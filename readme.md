@@ -7,7 +7,7 @@ Who says HTML is not a programming language?
 
 This module is just another templating engine.
 With elixir, we can leverage its ability to call individual functions in `iex` mode.
-Elixir can quickly build templates on the fly, with our html stored in binary strings.
+Elixir can quickly build templates on the fly.
 
 > Notice: This Project Is Still In Beta.
 
@@ -51,7 +51,7 @@ You can also call this method without the "--src" or "--port"
 ```shell
 ./htmlc --src="/var/www/html"
 # is equivalent to
-./htmlc --src="/var/www/html"
+./htmlc /var/www/html
 
 ./htmlc --port="3000"
 # is equivalent to
@@ -69,7 +69,33 @@ You can also call this method without the "--src" or "--port"
 
 ## Elixir Template Usage
 
+```shell
+# compile
+./htmlc
+
+# start template engine
+elixir "./html.exs"
+
+# render page
+> render, mypage/home, mylayout/layout, eyJqc29uIjogImFyZ3MifQ== # base64({"json": "args"})
+
+# render widget (optional)
+> widget, mywidget/app, eyJqc29uIjogImFyZ3MifQ== # base64({"json": "args"})
+
+# render layout (optional)
+> layout, mylayout/layout, eyJqc29uIjogImFyZ3MifQ==, eyJqc29uIjogImh0bWwgY29udGVudCJ9
+#                          base64({"json": "args"}), base64({"json": "html content"})
+
+# stop template engine
+stop
+```
+
+### IEX Template Usage
+
 ```elixir
+# compile
+./htmlc --iex
+
 # start template engine
 iex "./html.exs"
 
@@ -84,4 +110,56 @@ iex> App.layout "mylayout/layout", %{args: "myarg"}, %{body: "page embed"}
 
 # stop template engine
 iex> System.halt
+```
+
+## HTML Templates
+
+### Layout
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0"/>
+  <meta name="description" content="{desc}"/>
+  <title>{title}<!-- {variable} --></title>
+  {@head} <!-- embed page head -->
+</head>
+<body>
+  {@body} <!-- embed page body -->
+</body>
+</html>
+```
+
+### Page
+
+```html
+<_@head> <!-- embed into layout {@head} reference -->
+  <link rel="stylesheet" href="/style.css">
+</_@head>
+
+<_@body> <!-- embed into {@body} -->
+  <h1>Hello, World</h1>
+
+  <!-- use `<_#name>` to embed widgets -->
+  <_#app n="2">
+    widget body
+  </_#app>
+
+  <main>
+    {&main} <!-- {&variable} use `&` to allow raw HTML -->
+  </main>
+</_@body>
+```
+
+### Widget
+
+```html
+<div class="widget">
+  <!-- use <% scripts %> to run elixir (feature not yet implemented) -->
+  {n} * 2 = <%
+    args.n * 2
+  %>
+</div>
 ```

@@ -17,20 +17,21 @@ func loadLayout(out *os.File, name string, buf *[]byte, usedRandID *[][]byte) {
 	)
 
 	regex.Comp(`(?ms)^([\s\t]*}[\s\t]*#_MAP_LAYOUT)$`).RepFileStr(out, regex.JoinBytes(
-		"\t\t", '"', goutil.HTML.EscapeArgs([]byte(name), '"'), '"',
+		"\t\t", '"', EscapeExsArgs([]byte(name), '"'), '"',
 		` => :`, randID, ',',
 		"\n$1",
 	), false)
 
+	q := '"'
+	t := "\t\t"
+	if IexMode {
+		q = '\''
+		t = ""
+	}
+
 	regex.Comp(`(?ms)^([\s\t]*end[\s\t]*#_LAYOUT)$`).RepFileStr(out, regex.JoinBytes(
 		"\t", `def `, randID, `(args, cont) do`, '\n',
-		// '\'', goutil.HTML.EscapeArgs(*buf, '\''), '\'',
-		// '"', goutil.HTML.EscapeArgs(*buf, '"'), '"',
-
-		"\t\t", '"', *buf, '"',
-		// "\t\t", '\'', *buf, '\'',
-		// `"#{<<`, *buf, `>>}"`,
-
+		t, q, *buf, q,
 		"\n\tend",
 		"\n$1",
 	), false)
@@ -45,20 +46,21 @@ func loadWidget(out *os.File, name string, buf *[]byte, usedRandID *[][]byte) {
 	)
 
 	regex.Comp(`(?ms)^([\s\t]*}[\s\t]*#_MAP_WIDGET)$`).RepFileStr(out, regex.JoinBytes(
-		"\t\t", '"', goutil.HTML.EscapeArgs([]byte(name), '"'), '"',
+		"\t\t", '"', EscapeExsArgs([]byte(name), '"'), '"',
 		` => :`, randID, ',',
 		"\n$1",
 	), false)
 
+	q := '"'
+	t := "\t\t"
+	if IexMode {
+		q = '\''
+		t = ""
+	}
+
 	regex.Comp(`(?ms)^([\s\t]*end[\s\t]*#_WIDGET)$`).RepFileStr(out, regex.JoinBytes(
 		"\t", `def `, randID, `(args) do`, '\n',
-		// '\'', goutil.HTML.EscapeArgs(*buf, '\''), '\'',
-		// '"', goutil.HTML.EscapeArgs(*buf, '"'), '"',
-
-		"\t\t", '"', *buf, '"',
-		// "\t\t", '\'', *buf, '\'',
-		// `"#{<<`, *buf, `>>}"`,
-
+		t, q, *buf, q,
 		"\n\tend",
 		"\n$1",
 	), false)
@@ -73,7 +75,7 @@ func loadPage(out *os.File, name string, buf *map[string][]byte, usedRandID *[][
 	)
 
 	regex.Comp(`(?ms)^([\s\t]*}[\s\t]*#_MAP_PAGE)$`).RepFileStr(out, regex.JoinBytes(
-		"\t\t", '"', goutil.HTML.EscapeArgs([]byte(name), '"'), '"',
+		"\t\t", '"', EscapeExsArgs([]byte(name), '"'), '"',
 		` => :`, randID, ',',
 		"\n$1",
 	), false)
@@ -83,15 +85,15 @@ func loadPage(out *os.File, name string, buf *map[string][]byte, usedRandID *[][
 		"\t\t", `App.layout layout, args, %{`, '\n',
 	)
 
+	q := '"'
+	if IexMode {
+		q = '\''
+	}
+
 	for key, val := range *buf {
 		resBuf = regex.JoinBytes(resBuf,
 			"\t\t\t", regex.CompRE2(`[^\w_]`).RepStrLit([]byte(key), []byte{}), ": ",
-			// '"', goutil.HTML.EscapeArgs(val, '"'), '"', ",\n",
-			// '"', goutil.HTML.EscapeArgs(val, '"'), '"', ",\n",
-
-			'"', val, '"', ",\n",
-			// '\'', val, '\'', ",\n",
-			// `"#{<<`, val, `>>}"`, ",\n",
+			q, val, q, ",\n",
 		)
 	}
 

@@ -21,6 +21,11 @@ func main() {
 	out := args.Get("", "out", "output", "o", "dist")
 	port := args.Get("", "port", "")
 	noCompile := args.Get("false", "no-compile", "n")
+	iexMode := args.Get("false", "iex", "iex-mode")
+
+	if iexMode != "false" {
+		htmlc.IexMode = true
+	}
 
 	if !regex.Comp(`^[0-9]{4,5}$`).Match([]byte(port)) && regex.Comp(`^[0-9]{4,5}$`).Match([]byte(src)) {
 		goutil.Swap(&src, &port)

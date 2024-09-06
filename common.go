@@ -29,6 +29,10 @@ func EscapeExsArgs(html []byte, quote ...byte) []byte {
 }
 
 func encodeBit(ind *[2]int, buf *[]byte) []byte {
+	if IexMode {
+		return EscapeExsArgs((*buf)[ind[0]:ind[1]], '\'')
+	}
+
 	/* bit := []byte(fmt.Sprintf("%#v", (*buf)[ind[0]:ind[1]]))
 	bit = bytes.TrimPrefix(bit, []byte(`[]byte{`))
 	bit = bytes.TrimSuffix(bit, []byte(`}`)) */
