@@ -14,10 +14,32 @@ Elixir can quickly build templates on the fly.
 ## Installation
 
 ```shell
+# install the go module
 go get github.com/tkdeng/htmlc
+
+# or install the binary
+git clone https://github.com/tkdeng/htmlc.git &&\
+cd htmlc &&\
+make &&\
+cd ../ && rm -r htmlc
+
+# install into /usr/bin (default)
+make install
+
+# install locally
+make local
+
+# build without dependency installation
+make build
+
+# install dependencies
+make deps
+
+# uninstall htmlc
+make clean
 ```
 
-## Usage
+## Golang Usage
 
 ```go
 import (
@@ -29,18 +51,18 @@ func main(){
 }
 ```
 
-## Using The Binary
+## Binary Usage
 
 You can opptionally just use the binary instead of importing the module.
 
 ```shell
-./htmlc --src="./src" --out="./output.exs"
+htmlc --src="./src" --out="./output.exs"
 ```
 
 You can also specify a port number, to automatically start a static-like http server.
 
 ```shell
-./htmlc --port="3000"
+htmlc --port="3000"
 ```
 
 Note: by default, "--src" is set to the current working directory,
@@ -49,22 +71,22 @@ and "--out" is set to the same directory, with the file name set to the base fol
 You can also call this method without the "--src" or "--port"
 
 ```shell
-./htmlc --src="/var/www/html"
+htmlc --src="/var/www/html"
 # is equivalent to
-./htmlc /var/www/html
+htmlc /var/www/html
 
-./htmlc --port="3000"
+htmlc --port="3000"
 # is equivalent to
-./htmlc 3000
+htmlc 3000
 
 # so you can use the method like this
-./htmlc /var/www/html 3000
+htmlc /var/www/html 3000
 
 # and the order doesnt matter, as long as the port number is a valid uint16
-./htmlc 3000 /var/www/html
+htmlc 3000 /var/www/html
 
 # note: the output file must still be specified with "--out"
-./htmlc --out="html.exs" /var/www/html 3000
+htmlc --out="html.exs" /var/www/html 3000
 ```
 
 ## Elixir Template Usage

@@ -3,13 +3,17 @@ install all:
 	make build
 	sudo cp ./htmlc /usr/bin/htmlc
 
-build:
-	go mod tidy
-	go build -C ./exec -o ../htmlc
+local:
+	make dependencies
+	make build
 
 dev:
 	make build
 	sudo cp ./htmlc /usr/bin/htmlc
+
+build:
+	go mod tidy
+	go build -C ./exec -o ../htmlc
 
 deps dependencies:
 ifeq (,$(wildcard $(/usr/bin/dnf)))
