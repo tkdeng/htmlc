@@ -99,10 +99,12 @@ htmlc --out="html.exs" /var/www/html 3000
 elixir "./html.exs"
 
 # render page
-> render, mypage/home, mylayout/layout, eyJqc29uIjogImFyZ3MifQ== # base64({"json": "args"})
+> render, mypage/home, mylayout/layout, eyJqc29uIjogImFyZ3MifQ==
+#                                       base64({"json": "args"})
 
 # render widget (optional)
-> widget, mywidget/app, eyJqc29uIjogImFyZ3MifQ== # base64({"json": "args"})
+> widget, mywidget/app, eyJqc29uIjogImFyZ3MifQ==
+#                       base64({"json": "args"})
 
 # render layout (optional)
 > layout, mylayout/layout, eyJqc29uIjogImFyZ3MifQ==, eyJqc29uIjogImh0bWwgY29udGVudCJ9
