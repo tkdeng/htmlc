@@ -83,6 +83,9 @@ func (comp *compileExs) compile() error {
 			return true
 		}
 
+		//todo: consider adding shortcode support (to call custom elixir functions imported by possible plugins)
+		// call with the apply() method with PluginName as the module, and its functions as hooks
+
 		// get <% elixir %>
 		if b(0) == '<' && b(1) == '%' {
 			exs := []byte{}
