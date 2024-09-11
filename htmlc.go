@@ -37,8 +37,21 @@ func Compile(src string, out string) error {
 	outfile.Write(template)
 
 	if IexMode {
-		regex.Comp(`(?m)^[\s\t]*def\s+listen\(\)\s*do([\r\n]|.)*?^[\s\t]*end\s*#_LISTEN\r?\n?`).RepFileStr(outfile, []byte{}, false, 1024*1024)
-		regex.Comp(`(?m)^[\s\t]*App.listen\(\)\r?\n?`).RepFileStr(outfile, []byte{}, false)
+
+		rmList := []string{
+			// bug: strange error where `\[\]` is not recognized correctly
+			// remove json import
+			`Mix\.install\(.:jason.\)[\r\n]?`,
+
+			// remove App.listen function
+			`def\s+listen\(\)\s*do([\r\n]|.)*?^[\s\t]*end\s*#_LISTEN`,
+
+			// remove App.listen function call
+			`App\.listen\(\)`,
+		}
+
+		regex.Comp(`(?m)^[\s\t]*(`+strings.Join(rmList, "|")+`)[\r\n]?`).RepFileStr(outfile, []byte{}, true, 1024*1024)
+		outfile.Sync()
 	}
 
 	usedRandID := [][]byte{}

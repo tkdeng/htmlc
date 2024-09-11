@@ -2,17 +2,17 @@ Mix.install([:jason])
 
 defmodule App do
   @map_layout %{
-		"layout" => :_layout_a9utbaMP9rbEa8IJ,
+		"layout" => :_layout_a9yis6lSLpPxBojU,
   } #_MAP_LAYOUT
 
   @map_widget %{
-		"app" => :_app_a9utbXp90Lfl0LMH,
+		"app" => :_app_a9yiskjb0HwnlIu0,
   } #_MAP_WIDGET
 
   @map_page %{
-		"404" => :_404_a9utbvQYwxi8Tg5B,
-		"error" => :_error_a9utbqfup7XZwibm,
-		"index" => :_index_a9utbzVaHs1cM0Z7,
+		"404" => :_404_a9yisFDbMFbTmESd,
+		"error" => :_error_a9yisVGXNvGu94Bj,
+		"index" => :_index_a9yisMGscMAtpU6z,
   } #_MAP_PAGE
 
   def listen() do
@@ -198,34 +198,34 @@ defmodule App do
 end
 
 defmodule LAYOUT do
-	def _layout_a9utbaMP9rbEa8IJ(args, cont) do
+	def _layout_a9yis6lSLpPxBojU(args, cont) do
 		"<<PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgPG1ldGEgY2hhcnNldD0iVVRGLTgiLz4KICA8bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBoZWlnaHQ9ZGV2aWNlLWhlaWdodCwgaW5pdGlhbC1zY2FsZT0xLjAsIG1pbmltdW0tc2NhbGU9MS4wIi8+CiAgPG1ldGEgbmFtZT0iZGVzY3JpcHRpb24iIGNvbnRlbnQ9Ig==>>#{App.escapeArg args[:desc]}<<Ii8+CiAgPHRpdGxlPg==>>#{App.escapeHTML args[:title]}<<PC90aXRsZT4KICA=>>#{cont[:head]}<<CjwvaGVhZD4KPGJvZHk+CiAg>>#{cont[:body]}<<CjwvYm9keT4KPC9odG1sPg==>>"
 	end
 end #_LAYOUT
 
 defmodule WIDGET do
-	def _app_a9utbXp90Lfl0LMH(args) do
+	def _app_a9yiskjb0HwnlIu0(args) do
 		"<<PGRpdiBjbGFzcz0id2lkZ2V0Ij4KICA=>>#{App.escapeHTML args[:n]}<<ICogMiA9IDwlCiAgICBhcmdzLm4gKiAyCiAgJT4KPC9kaXY+>>"
 	end
 end #_WIDGET
 
 defmodule PAGE do
-	def _404_a9utbvQYwxi8Tg5B(layout, args) do
+	def _404_a9yisFDbMFbTmESd(layout, args) do
 		App.layout layout, args, %{
 			body: "<<CiAgPGgxPkVycm9yIDQwNDwvaDE+CiAgPGgyPlBhZ2UgTm90IEZvdW5kITwvaDI+>>",
 		}
 	end
-	def _error_a9utbqfup7XZwibm(layout, args) do
+	def _error_a9yisVGXNvGu94Bj(layout, args) do
 		App.layout layout, args, %{
 			body: "<<CiAgPGgxPkVycm9yIA==>>#{App.escapeHTML args[:status]}<<PC9oMT4KICA8aDI+>>#{App.escapeHTML args[:error]}<<PC9oMj4=>>",
 		}
 	end
-	def _index_a9utbzVaHs1cM0Z7(layout, args) do
+	def _index_a9yisMGscMAtpU6z(layout, args) do
 		App.layout layout, args, %{
 			head: "<<CiAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSIvc3R5bGUuY3NzIj4=>>",
 			body: "<<CiAgPGgxPkhlbGxvLCBXb3JsZDwvaDE+CiAg>>#{App.widget "app", Map.merge(args, %{
-	body: "<<CiAgICB3aWRnZXQgYm9keQog>> ",
 	n: 2,
+	body: "<<CiAgICB3aWRnZXQgYm9keQog>> ",
 })}<<CgogIDxtYWluIGlmPSJtYWluIj4KICAgIA==>>#{args[:main]}<<CiAgPC9tYWluPgoKICA8IS0tIDx1bCBlYWNoPSJtZW51Ij4KICAgIDxsaT48YSBocmVmPSJ7I3VybH0iPnsjbmFtZX08L2E+PC9saT4KICA8L3VsPiAtLT4=>>",
 		}
 	end

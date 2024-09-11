@@ -17,7 +17,13 @@ import (
 func main() {
 	args := goutil.ReadArgs()
 
-	src := args.Get("./src", "src", "root", "")
+	help := args.Get("", "help", "h")
+	if help != "" {
+		printHelp()
+		return
+	}
+
+	src := args.Get("", "src", "root", "")
 	out := args.Get("", "out", "output", "o", "dist")
 	port := args.Get("", "port", "")
 	noCompile := args.Get("false", "no-compile", "n")
@@ -29,6 +35,11 @@ func main() {
 
 	if !regex.Comp(`^[0-9]{4,5}$`).Match([]byte(port)) && regex.Comp(`^[0-9]{4,5}$`).Match([]byte(src)) {
 		goutil.Swap(&src, &port)
+	}
+
+	if src == "" {
+		printHelp()
+		return
 	}
 
 	if out == "" {

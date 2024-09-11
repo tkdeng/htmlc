@@ -4,7 +4,8 @@ go 1.22.6
 
 require (
 	github.com/tkdeng/goregex v0.0.1
-	github.com/tkdeng/goutil v0.6.0
+	github.com/tkdeng/goutil v0.7.0
+	golang.org/x/term v0.24.0
 )
 
 require (
