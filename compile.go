@@ -529,11 +529,11 @@ func (comp *compileExs) compMarkdown(md *[]byte) {
 	//todo: compile markdown
 }
 
-func (comp *compileExs) compJS(md *[]byte) {
+func (comp *compileExs) compJS(js *[]byte) {
 	//todo: compile js script
 }
 
-func (comp *compileExs) compCSS(md *[]byte) {
+func (comp *compileExs) compCSS(css *[]byte) {
 	//todo: compile css style
 }
 
