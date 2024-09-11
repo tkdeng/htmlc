@@ -429,7 +429,7 @@ func (comp *compileExs) compile() error {
 		return true
 	})
 
-	if (*comp.buf)[len(*comp.buf)-1] == '\n' {
+	if len(*comp.buf) != 0 && (*comp.buf)[len(*comp.buf)-1] == '\n' {
 		*comp.buf = (*comp.buf)[:len(*comp.buf)-1]
 	}
 
