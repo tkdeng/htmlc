@@ -20,13 +20,13 @@ go get github.com/tkdeng/htmlc
 # or install the binary
 git clone https://github.com/tkdeng/htmlc.git &&\
 cd htmlc &&\
-make &&\
+make install &&\
 cd ../ && rm -r htmlc
 
-# install into /usr/bin (default)
+# install into /usr/bin
 make install
 
-# install locally
+# install locally (with dependencies)
 make local
 
 # build without dependency installation
