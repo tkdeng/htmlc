@@ -10,9 +10,12 @@ import (
 
 	regex "github.com/tkdeng/goregex"
 	"github.com/tkdeng/goutil"
+	"github.com/tkdeng/htmlc/plugin"
 )
 
 //todo: allow dynamic compiling and listening for file changes
+
+const Ext = "htmlc"
 
 //go:embed template.exs
 var template []byte
@@ -37,7 +40,6 @@ func Compile(src string, out string) error {
 	outfile.Write(template)
 
 	if IexMode {
-
 		rmList := []string{
 			// bug: strange error where `\[\]` is not recognized correctly
 			// remove json import
@@ -100,24 +102,24 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 					}
 				}
 			}
-		} else if strings.HasSuffix(file.Name(), ".html") {
+		} else if strings.HasSuffix(file.Name(), ".html") || strings.HasSuffix(file.Name(), "."+Ext) {
 			if path, err := goutil.JoinPath(dir, file.Name()); err == nil {
 				if buf, err := os.ReadFile(path); err == nil {
 					n := name
 					if n != "" {
 						n += "/"
 					}
-					n += strings.TrimSuffix(file.Name(), ".html")
+					n += strings.TrimSuffix(strings.TrimSuffix(file.Name(), ".html"), "."+Ext)
 
 					if dirType == 'l' {
 						comp := compileExs{buf: &buf}
-						if err := comp.compile(); err != nil {
+						if err := comp.compile(""); err != nil {
 							return err
 						}
 						loadLayout(out, n, &buf, usedRandID)
 					} else if dirType == 'w' {
 						comp := compileExs{buf: &buf}
-						if err := comp.compile(); err != nil {
+						if err := comp.compile(""); err != nil {
 							return err
 						}
 						loadWidget(out, n, &buf, usedRandID)
@@ -140,7 +142,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 
 						for k, b := range buf_page {
 							comp := compileExs{buf: &b}
-							if err := comp.compile(); err != nil {
+							if err := comp.compile(""); err != nil {
 								return err
 							}
 							buf_page[k] = b
@@ -167,7 +169,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 
 						if len(buf_layout) != 0 {
 							comp := compileExs{buf: &buf_layout}
-							if err := comp.compile(); err != nil {
+							if err := comp.compile(""); err != nil {
 								return err
 							}
 							loadLayout(out, n, &buf_layout, usedRandID)
@@ -176,7 +178,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 						if len(buf_page) != 0 {
 							for k, b := range buf_page {
 								comp := compileExs{buf: &b}
-								if err := comp.compile(); err != nil {
+								if err := comp.compile(""); err != nil {
 									return err
 								}
 								buf_page[k] = b
@@ -186,11 +188,36 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 
 						if len(buf) != 0 && len(regex.Comp(`(?s)[\s\r\n\t ]+`).RepStrLit(buf, []byte{})) != 0 {
 							comp := compileExs{buf: &buf}
-							if err := comp.compile(); err != nil {
+							if err := comp.compile(""); err != nil {
 								return err
 							}
 							loadWidget(out, n, &buf, usedRandID)
 						}
+					}
+				}
+			}
+		} else if regex.Comp(`\.([\w_-]+)$`).Match([]byte(file.Name())) {
+			var ext string
+			regex.Comp(`\.([\w_-]+)$`).RepFunc([]byte(file.Name()), func(data func(int) []byte) []byte {
+				ext = string(data(1))
+				return nil
+			})
+
+			if path, err := goutil.JoinPath(dir, file.Name()); err == nil {
+				if buf, err := os.ReadFile(path); err == nil {
+					n := name
+					if n != "" {
+						n += "/"
+					}
+					n += strings.TrimSuffix(file.Name(), "."+ext)
+
+					comp := compileExs{buf: &buf}
+					if err := comp.compile(ext); err != nil {
+						return err
+					}
+
+					if cb, ok := plugin.Loader[ext]; ok {
+						cb(out, n, &buf, usedRandID, IexMode)
 					}
 				}
 			}
