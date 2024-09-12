@@ -58,6 +58,9 @@ func addLoader(name string, cb func(out *os.File, name string, buf *[]byte, used
 }
 
 func RunCompiler(name string, buf *[]byte, iexMode bool) (*[]byte, error) {
+	//todo: simplify to reduce depending on plugin.go
+	// instead just pass the buf
+	
 	if cb, ok := Compiler[name]; ok {
 		comp := compileExs{buf: buf}
 		cb(&comp, iexMode)
