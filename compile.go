@@ -551,6 +551,7 @@ func (comp *compileExs) embedWedget(name []byte, args map[string][]byte) *[]byte
 	return &buf
 }
 
+// compExs compiles <% elixir %> scripts
 func (comp *compileExs) compExs() {
 	//todo: compile exs scripts
 }
