@@ -94,9 +94,6 @@ func (comp *compileExs) compile(compMode string) error {
 				return true
 			}
 
-			//todo: consider adding shortcode support (to call custom elixir functions imported by possible plugins)
-			// call with the apply() method with PluginName as the module, and its functions as hooks
-
 			// get <#widget>
 			if b(0) == '<' && (b(1) == '#' || (b(1) == '_' && b(2) == '#')) {
 				ind := [2]int{*i}
@@ -121,6 +118,18 @@ func (comp *compileExs) compile(compMode string) error {
 
 				if b(0) != '>' {
 					m.Inc(1)
+				}
+
+				// if basic widget `<#name/>`
+				if bytes.HasSuffix(name, []byte{'/'}) || b(-1) == '/' || (b(0) == '/' && b(1) == '>') {
+					if b(0) == '/' && b(1) == '>' {
+						m.Inc(1)
+					}
+
+					name = bytes.TrimSuffix(name, []byte{'/'})
+					ind[1] = *i + 1
+					m.Replace(&ind, comp.embedWedget(name, map[string][]byte{}))
+					return true
 				}
 
 				args := map[string][]byte{}
@@ -188,6 +197,10 @@ func (comp *compileExs) compile(compMode string) error {
 					return true
 				})
 
+				if bytes.Equal(argName, []byte{'/'}) {
+					argName = []byte{}
+				}
+
 				if len(argName) != 0 {
 					args[string(argName)] = []byte("true")
 				}
@@ -234,9 +247,9 @@ func (comp *compileExs) compile(compMode string) error {
 				ind[1] = *i
 				m.Inc(1)
 
-				if resBuf, err := plugin.RunCompiler("exs", &exs, IexMode); err == nil {
-					m.Replace(&ind, resBuf)
-				}
+				compExs := compileExs{buf: &exs}
+				compExs.compExs()
+				m.Replace(&ind, compExs.buf)
 
 				return true
 			}
@@ -290,8 +303,9 @@ func (comp *compileExs) compile(compMode string) error {
 						})
 						ind[1] = *i
 
-						if resBuf, err := plugin.RunCompiler(ext, &tagBuf, IexMode); err == nil {
-							m.Replace(&ind, resBuf)
+						if cb, ok := plugin.Compiler[ext]; ok {
+							cb(&tagBuf, IexMode)
+							m.Replace(&ind, &tagBuf)
 						}
 
 						return true
@@ -299,15 +313,23 @@ func (comp *compileExs) compile(compMode string) error {
 				}
 			}
 
-			// get <markdown>, <script>, and <style> tags
-			/* if b(0) == '<' && (bytes.Equal(m.GetBuf(3), []byte("<md")) || bytes.Equal(m.GetBuf(9), []byte("<markdown"))) {
+			// skip <markdown>, <script>, and <style> tags (if missed by plugin)
+			if b(0) == '<' && (bytes.Equal(m.GetBuf(3), []byte("<md")) || bytes.Equal(m.GetBuf(9), []byte("<markdown")) || bytes.Equal(m.GetBuf(7), []byte("<script")) || bytes.Equal(m.GetBuf(6), []byte("<style"))) {
 				var closeTag []byte
 				if bytes.Equal(m.GetBuf(3), []byte("<md")) {
 					m.Inc(3)
 					closeTag = []byte("</md>")
-				} else {
+				} else if bytes.Equal(m.GetBuf(9), []byte("<markdown")) {
 					m.Inc(9)
 					closeTag = []byte("</markdown>")
+				} else if bytes.Equal(m.GetBuf(7), []byte("<script")) {
+					m.Inc(7)
+					closeTag = []byte("</script>")
+				} else if bytes.Equal(m.GetBuf(6), []byte("<style")) {
+					m.Inc(7)
+					closeTag = []byte("</style>")
+				} else {
+					return true
 				}
 
 				if b(0) != '>' && b(0) != ' ' {
@@ -343,122 +365,14 @@ func (comp *compileExs) compile(compMode string) error {
 					return true
 				})
 
-				md := []byte{}
 				m.Inc(1)
-				ind := [2]int{*i}
 				m.Loop(func() bool { return !bytes.Equal(m.GetBuf(len(closeTag)), closeTag) }, func() bool {
-					md = append(md, b(0))
 					m.Inc(1)
 					return true
 				})
-				ind[1] = *i
-
-				mdComp := compileExs{buf: &md}
-				mdComp.compMD()
-				m.Replace(&ind, mdComp.buf)
 
 				return true
-			} else if b(0) == '<' && bytes.Equal(m.GetBuf(7), []byte("<script")) {
-				m.Inc(7)
-				if b(0) != '>' && b(0) != ' ' {
-					return true
-				}
-
-				m.Loop(func() bool { return b(0) != '>' }, func() bool {
-					if b(0) == '"' || b(0) == '\'' {
-						q := b(0)
-						str := []byte{}
-						m.Inc(1)
-						ind := [2]int{*i}
-
-						m.Loop(func() bool { return b(0) != q }, func() bool {
-							if b(0) == '\\' {
-								if b(1) == q || common.IsCharAlphaNumeric(b(1)) {
-									str = append(str, b(0))
-								}
-								m.Inc(1)
-							}
-
-							str = append(str, b(0))
-							m.Inc(1)
-							return true
-						})
-						ind[1] = *i
-
-						comp.compStr(q, &str)
-						m.Replace(&ind, &str)
-					}
-
-					m.Inc(1)
-					return true
-				})
-
-				js := []byte{}
-				m.Inc(1)
-				ind := [2]int{*i}
-				m.Loop(func() bool { return !bytes.Equal(m.GetBuf(9), []byte("</script>")) }, func() bool {
-					js = append(js, b(0))
-					m.Inc(1)
-					return true
-				})
-				ind[1] = *i
-
-				jsComp := compileExs{buf: &js}
-				jsComp.compJS()
-				m.Replace(&ind, jsComp.buf)
-
-				return true
-			} else if b(0) == '<' && bytes.Equal(m.GetBuf(6), []byte("<style")) {
-				m.Inc(6)
-				if b(0) != '>' && b(0) != ' ' {
-					return true
-				}
-
-				m.Loop(func() bool { return b(0) != '>' }, func() bool {
-					if b(0) == '"' || b(0) == '\'' {
-						q := b(0)
-						str := []byte{}
-						m.Inc(1)
-						ind := [2]int{*i}
-
-						m.Loop(func() bool { return b(0) != q }, func() bool {
-							if b(0) == '\\' {
-								if b(1) == q || common.IsCharAlphaNumeric(b(1)) {
-									str = append(str, b(0))
-								}
-								m.Inc(1)
-							}
-
-							str = append(str, b(0))
-							m.Inc(1)
-							return true
-						})
-						ind[1] = *i
-
-						comp.compStr(q, &str)
-						m.Replace(&ind, &str)
-					}
-
-					m.Inc(1)
-					return true
-				})
-
-				css := []byte{}
-				m.Inc(1)
-				ind := [2]int{*i}
-				m.Loop(func() bool { return !bytes.Equal(m.GetBuf(8), []byte("</style>")) }, func() bool {
-					css = append(css, b(0))
-					m.Inc(1)
-					return true
-				})
-				ind[1] = *i
-
-				cssComp := compileExs{buf: &css}
-				cssComp.compCSS()
-				m.Replace(&ind, cssComp.buf)
-
-				return true
-			} */
+			}
 
 			return true
 		})
@@ -466,7 +380,9 @@ func (comp *compileExs) compile(compMode string) error {
 
 	// compile plugin files
 	if compMode != "" {
-		plugin.RunCompiler(compMode, comp.buf, IexMode)
+		if cb, ok := plugin.Compiler[compMode]; ok {
+			cb(comp.buf, IexMode)
+		}
 	}
 
 	// encode to <<base64>>
@@ -607,6 +523,11 @@ func (comp *compileExs) compObj(obj *[]byte, inStr bool) {
 func (comp *compileExs) embedWedget(name []byte, args map[string][]byte) *[]byte {
 	name = bytes.ReplaceAll(name, []byte{'.'}, []byte{'/'})
 
+	if len(args) == 0 {
+		buf := regex.JoinBytes(`#{App.widget "`, name, `", args}`)
+		return &buf
+	}
+
 	buf := regex.JoinBytes(`#{App.widget "`, name, `", Map.merge(args, %{`, '\n')
 
 	for key, val := range args {
@@ -630,21 +551,6 @@ func (comp *compileExs) embedWedget(name []byte, args map[string][]byte) *[]byte
 	return &buf
 }
 
-//* lang compilers
-// handle like a normal compiler
-
-/* func (comp *compileExs) compExs() {
+func (comp *compileExs) compExs() {
 	//todo: compile exs scripts
 }
-
-func (comp *compileExs) compMD() {
-	//todo: compile markdown
-}
-
-func (comp *compileExs) compJS() {
-	//todo: compile js script
-}
-
-func (comp *compileExs) compCSS() {
-	//todo: compile css style
-} */

@@ -112,3 +112,39 @@ func loadPage(out *os.File, name string, buf *map[string][]byte, usedRandID *[][
 
 	out.Sync()
 }
+
+// loadExs loads a new elixir file into the output file
+func loadExs(out *os.File, name string, buf *[]byte, usedRandID *[][]byte) {
+	//todo: add elixir file to output file
+}
+
+// loadPluginFile loads a new plugin file as a widget into the output file
+func loadPluginFile(out *os.File, name string, ext string, buf *[]byte, usedRandID *[][]byte) {
+	randID := regex.JoinBytes(
+		ext, '_',
+		regex.CompRE2(`[^\w_]`).RepStrLit(bytes.ReplaceAll([]byte(name), []byte{'/'}, []byte{'_'}), []byte{}),
+		'_', goutil.URandBytes(16, usedRandID),
+	)
+
+	regex.Comp(`(?ms)^([\s\t]*}[\s\t]*#_MAP_WIDGET)$`).RepFileStr(out, regex.JoinBytes(
+		"\t\t", '"', ext, ':', common.EscapeExsArgs([]byte(name), '"'), '"',
+		` => :`, randID, ',',
+		"\n$1",
+	), false)
+
+	q := '"'
+	t := "\t\t"
+	if IexMode {
+		q = '\''
+		t = ""
+	}
+
+	regex.Comp(`(?ms)^([\s\t]*end[\s\t]*#_WIDGET)$`).RepFileStr(out, regex.JoinBytes(
+		"\t", `def `, randID, `(args) do`, '\n',
+		t, q, *buf, q,
+		"\n\tend",
+		"\n$1",
+	), false)
+
+	out.Sync()
+}

@@ -10,7 +10,6 @@ import (
 
 	regex "github.com/tkdeng/goregex"
 	"github.com/tkdeng/goutil"
-	"github.com/tkdeng/htmlc/plugin"
 )
 
 //todo: allow dynamic compiling and listening for file changes
@@ -196,6 +195,21 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 					}
 				}
 			}
+		} else if strings.HasSuffix(file.Name(), ".exs") {
+			if path, err := goutil.JoinPath(dir, file.Name()); err == nil {
+				if buf, err := os.ReadFile(path); err == nil {
+					n := name
+					if n != "" {
+						n += "/"
+					}
+					n += strings.TrimSuffix(strings.TrimSuffix(file.Name(), ".html"), "."+Ext)
+
+					comp := compileExs{buf: &buf}
+					comp.compExs()
+
+					loadExs(out, n, comp.buf, usedRandID)
+				}
+			}
 		} else if regex.Comp(`\.([\w_-]+)$`).Match([]byte(file.Name())) {
 			var ext string
 			regex.Comp(`\.([\w_-]+)$`).RepFunc([]byte(file.Name()), func(data func(int) []byte) []byte {
@@ -216,9 +230,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 						return err
 					}
 
-					if cb, ok := plugin.Loader[ext]; ok {
-						cb(out, n, &buf, usedRandID, IexMode)
-					}
+					loadPluginFile(out, n, ext, comp.buf, usedRandID)
 				}
 			}
 		}
