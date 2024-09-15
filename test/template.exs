@@ -1,17 +1,17 @@
 defmodule App do
   @map_layout %{
-		"layout" => :_layout_aa19xDAcNuxG1Ohg,
+		"layout" => :_layout_aa1a0h0zYhvHinQt,
   } #_MAP_LAYOUT
 
   @map_widget %{
-		"app" => :_app_aa19xP0utCZigYOw,
-		"md:text" => :md_text_aa19xduudoxsfpAh,
+		"app" => :_app_aa1a0lW8Pz4Ho4tr,
+		"md:text" => :md_text_aa1a0xHN0E3huJeB,
   } #_MAP_WIDGET
 
   @map_page %{
-		"404" => :_404_aa19xAZCjF3js22h,
-		"error" => :_error_aa19x4y08wdhZhSR,
-		"index" => :_index_aa19xZNpPCyUy5Qp,
+		"404" => :_404_aa1a0yWp8iaB41Ro,
+		"error" => :_error_aa1a0ypZ68WgWxi2,
+		"index" => :_index_aa1a0TL0ZIypUEuH,
   } #_MAP_PAGE
 
   def render(name, layout, args) do
@@ -108,7 +108,7 @@ defmodule App do
 end
 
 defmodule LAYOUT do
-	def _layout_aa19xDAcNuxG1Ohg(args, cont) do
+	def _layout_aa1a0h0zYhvHinQt(args, cont) do
 '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -126,34 +126,34 @@ defmodule LAYOUT do
 end #_LAYOUT
 
 defmodule WIDGET do
-	def _app_aa19xP0utCZigYOw(args) do
+	def _app_aa1a0lW8Pz4Ho4tr(args) do
 '<div class="widget">
   #{App.escapeHTML args[:n]} * 2 = <%
     args.n * 2
   %>
 </div>'
 	end
-	def md_text_aa19xduudoxsfpAh(args) do
+	def md_text_aa1a0xHN0E3huJeB(args) do
 '\# Hello, Markdown'
 	end
 end #_WIDGET
 
 defmodule PAGE do
-	def _404_aa19xAZCjF3js22h(layout, args) do
+	def _404_aa1a0yWp8iaB41Ro(layout, args) do
 		App.layout layout, args, %{
 			body: '
   <h1>Error 404</h1>
   <h2>Page Not Found!</h2>',
 		}
 	end
-	def _error_aa19x4y08wdhZhSR(layout, args) do
+	def _error_aa1a0ypZ68WgWxi2(layout, args) do
 		App.layout layout, args, %{
 			body: '
   <h1>Error #{App.escapeHTML args[:status]}</h1>
   <h2>#{App.escapeHTML args[:error]}</h2>',
 		}
 	end
-	def _index_aa19xZNpPCyUy5Qp(layout, args) do
+	def _index_aa1a0TL0ZIypUEuH(layout, args) do
 		App.layout layout, args, %{
 			head: '
   <link rel="stylesheet" href="/style.css">',
