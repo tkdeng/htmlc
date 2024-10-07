@@ -191,6 +191,8 @@ func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, e
 		lay = regex.CompRE2(`["'\']`).RepStrLit([]byte(layout[0]), []byte{})
 	}
 
+	//todo: fix issue with args not rendering properly
+
 	json, err := goutil.JSON.Stringify(args)
 	if err != nil {
 		return []byte{}, err
