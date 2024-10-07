@@ -2,6 +2,7 @@ package htmlc
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -261,6 +262,8 @@ func LiveEngine(src string, out string) (*ExsEngine, error) {
 		}
 		lastRecompile = now
 
+		fmt.Print("\033[33m htmlc engine restarting...\033[0m   \r")
+
 		time.Sleep(1000 * time.Millisecond)
 
 		if !mu.TryLock() {
@@ -268,7 +271,9 @@ func LiveEngine(src string, out string) (*ExsEngine, error) {
 		}
 		defer mu.Unlock()
 
-		engine.Restart()
+		engine.Restart(src)
+
+		fmt.Print("                              \r")
 	}
 
 	watcher := goutil.FileWatcher()

@@ -33,3 +33,6 @@ endif
 clean:
 	rm ./htmlc
 	sudo rm /usr/bin/htmlc
+
+test-fiver:
+	cd ./gofiber && go test

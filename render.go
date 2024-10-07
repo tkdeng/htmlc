@@ -15,13 +15,14 @@ import (
 )
 
 type ExsEngine struct {
-	filename string
-	cmd      *exec.Cmd
-	stdin    io.WriteCloser
-	stdout   io.ReadCloser
-	out      <-chan []byte
-	running  *bool
-	mu       sync.Mutex
+	filename   string
+	cmd        *exec.Cmd
+	stdin      io.WriteCloser
+	stdout     io.ReadCloser
+	out        <-chan []byte
+	running    *bool
+	restarting *bool
+	mu         sync.Mutex
 
 	// will be used when recompiling
 	compMU sync.RWMutex
@@ -49,6 +50,7 @@ func Engine(file string) (*ExsEngine, error) {
 
 	out := make(chan []byte)
 	running := true
+	restarting := false
 	ready := false
 
 	go func() {
@@ -104,7 +106,9 @@ func Engine(file string) (*ExsEngine, error) {
 		running = false
 		stdin.Close()
 		stdout.Close()
-		fmt.Println("htmlc engine stopped")
+		if !restarting {
+			fmt.Println("\033[31mhtmlc engine stopped!\033[0m")
+		}
 	}()
 
 	err = cmd.Start()
@@ -112,20 +116,20 @@ func Engine(file string) (*ExsEngine, error) {
 		running = false
 		stdin.Close()
 		stdout.Close()
-		return &ExsEngine{}, err
+		return nil, err
 	}
 
 	time.Sleep(1 * time.Second)
-
 	ready = true
 
 	return &ExsEngine{
-		filename: file,
-		cmd:      cmd,
-		stdin:    stdin,
-		stdout:   stdout,
-		out:      out,
-		running:  &running,
+		filename:   file,
+		cmd:        cmd,
+		stdin:      stdin,
+		stdout:     stdout,
+		out:        out,
+		running:    &running,
+		restarting: &restarting,
 	}, nil
 }
 
@@ -136,20 +140,26 @@ func (exs *ExsEngine) Restart(compSrc ...string) error {
 	exs.compMU.Lock()
 	defer exs.compMU.Unlock()
 
+	fmt.Print("\033[33m htmlc engine restarting...\033[0m   \r")
+
 	time.Sleep(250 * time.Millisecond)
 
+	*exs.restarting = true
 	*exs.running = false
+	exs.stdin.Write([]byte("stop\n"))
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(250 * time.Millisecond)
 
 	if len(compSrc) != 0 {
 		if err := Compile(compSrc[0], exs.filename); err != nil {
+			fmt.Println("\033[31mhtmlc engine stopped!\033[0m         ")
 			return err
 		}
 	}
 
 	engine, err := Engine(exs.filename)
 	if err != nil {
+		fmt.Println("\033[31mhtmlc engine stopped!\033[0m         ")
 		return err
 	}
 
@@ -158,10 +168,11 @@ func (exs *ExsEngine) Restart(compSrc ...string) error {
 	exs.stdout = engine.stdout
 	exs.out = engine.out
 	exs.running = engine.running
+	exs.restarting = engine.restarting
 
 	time.Sleep(250 * time.Millisecond)
 
-	fmt.Println("htmlc engine restarted")
+	fmt.Print("                              \r")
 
 	return nil
 }
