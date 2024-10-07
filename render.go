@@ -32,6 +32,7 @@ type Map map[string]any
 var ErrorStopped error = errors.New("elixir cmd stopped running")
 var ErrorTimeout error = errors.New("request timed out")
 
+// Engine starts a new htmlc engine for an exs template
 func Engine(file string) (*ExsEngine, error) {
 	cmd := exec.Command(`elixir`, file)
 
@@ -165,6 +166,7 @@ func (exs *ExsEngine) Restart(compSrc ...string) error {
 	return nil
 }
 
+// Render renders an html page
 func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, error) {
 	exs.compMU.RLock()
 	defer exs.compMU.RUnlock()
@@ -215,6 +217,7 @@ func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, e
 	return out, nil
 }
 
+// Layout renders an html layout
 func (exs *ExsEngine) Layout(name string, args Map, cont ...map[string]string) ([]byte, error) {
 	exs.compMU.RLock()
 	defer exs.compMU.RUnlock()
@@ -282,6 +285,7 @@ func (exs *ExsEngine) Layout(name string, args Map, cont ...map[string]string) (
 	return out, nil
 }
 
+// Widget renders an html widget
 func (exs *ExsEngine) Widget(name string, args Map) ([]byte, error) {
 	exs.compMU.RLock()
 	defer exs.compMU.RUnlock()

@@ -22,6 +22,7 @@ var template []byte
 
 var IexMode bool = false
 
+// Compile will compile a directory into an exs template
 func Compile(src string, out string) error {
 	if stat, err := os.Stat(src); err != nil || !stat.IsDir() {
 		return errors.Join(err, os.ErrNotExist, errors.New("src \""+src+"\": directory not found"))
@@ -240,6 +241,7 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 	return nil
 }
 
+// LiveEngine will Compile a directory and creates a live updating Engine
 func LiveEngine(src string, out string) (*ExsEngine, error) {
 	if err := Compile(src, out); err != nil {
 		return nil, err

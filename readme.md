@@ -48,6 +48,37 @@ import (
 
 func main(){
   htmlc.Compile("./src", "./output.exs")
+
+  engine, err := htmlc.Engine("./output.exs")
+
+  // on page request
+  buf, err := engine.Render("index", htmlc.Map{"args": "my args"}, "layout")
+}
+```
+
+## Gofiber Usage
+
+```go
+import (
+  "github.com/gofiber/fiber/v3"
+  htmlcfiber "github.com/tkdeng/htmlc/gofiber"
+)
+
+func main(){
+  engine, err := htmlcfiber.New("./src")
+  if err != nil {
+    panic(err)
+  }
+
+  app := fiber.New(fiber.Config{
+    Views: engine,
+  })
+
+  app.Get("/", func(c fiber.Ctx) error {
+    return c.Render("index", fiber.Map{"title": "Test"}, "layout")
+  })
+
+  app.Listen(":3000")
 }
 ```
 
