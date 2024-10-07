@@ -1,4 +1,4 @@
-package gofiber
+package htmlcfiber
 
 import (
 	"fmt"
