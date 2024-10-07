@@ -5,14 +5,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	_ "embed"
 
 	regex "github.com/tkdeng/goregex"
 	"github.com/tkdeng/goutil"
+	"github.com/tkdeng/htmlc/plugin"
 )
-
-//todo: allow dynamic compiling and listening for file changes
 
 const Ext = "htmlc"
 
@@ -237,4 +238,56 @@ func compileDir(out *os.File, dir string, name string, dirType byte, usedRandID 
 	}
 
 	return nil
+}
+
+func LiveEngine(src string, out string) (*ExsEngine, error) {
+	if err := Compile(src, out); err != nil {
+		return nil, err
+	}
+
+	engine, err := Engine(out)
+	if err != nil {
+		return nil, err
+	}
+
+	var mu sync.Mutex
+	lastRecompile := time.Now().UnixMilli()
+	recompile := func() {
+		now := time.Now().UnixMilli()
+		if now-lastRecompile < 800 {
+			return
+		}
+		lastRecompile = now
+
+		time.Sleep(1000 * time.Millisecond)
+
+		if !mu.TryLock() {
+			return
+		}
+		defer mu.Unlock()
+
+		engine.Restart()
+	}
+
+	watcher := goutil.FileWatcher()
+
+	watcher.OnAny = func(path, op string) {
+		if strings.HasSuffix(path, ".html") || strings.HasSuffix(path, "."+Ext) {
+			go recompile()
+			return
+		}
+
+		for name := range plugin.Compiler {
+			if strings.HasSuffix(path, "."+name) {
+				go recompile()
+				return
+			}
+		}
+	}
+
+	if err := watcher.WatchDir(src); err != nil {
+		return engine, err
+	}
+
+	return engine, nil
 }

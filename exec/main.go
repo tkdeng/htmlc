@@ -69,12 +69,23 @@ func main() {
 	}
 
 	if port != "" {
-		runServer(out, port)
+		if noCompile == "false" {
+			runServer(out, port, src)
+		}else{
+			runServer(out, port)
+		}
 	}
 }
 
-func runServer(file string, port string) {
-	exs, err := htmlc.Engine(file)
+func runServer(file string, port string, liveSrc ...string) {
+	var exs *htmlc.ExsEngine
+	var err error
+	
+	if len(liveSrc) != 0 {
+		exs, err = htmlc.LiveEngine(liveSrc[0], file)
+	}else{
+		exs, err = htmlc.Engine(file)
+	}
 	if err != nil {
 		panic(err)
 	}

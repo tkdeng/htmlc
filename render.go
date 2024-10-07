@@ -15,12 +15,16 @@ import (
 )
 
 type ExsEngine struct {
-	cmd     *exec.Cmd
-	stdin   io.WriteCloser
-	stdout  io.ReadCloser
-	out     <-chan []byte
-	running *bool
-	mu      sync.Mutex
+	filename string
+	cmd      *exec.Cmd
+	stdin    io.WriteCloser
+	stdout   io.ReadCloser
+	out      <-chan []byte
+	running  *bool
+	mu       sync.Mutex
+
+	// will be used when recompiling
+	compMU sync.RWMutex
 }
 
 type Map map[string]any
@@ -115,15 +119,56 @@ func Engine(file string) (*ExsEngine, error) {
 	ready = true
 
 	return &ExsEngine{
-		cmd:     cmd,
-		stdin:   stdin,
-		stdout:  stdout,
-		out:     out,
-		running: &running,
+		filename: file,
+		cmd:      cmd,
+		stdin:    stdin,
+		stdout:   stdout,
+		out:      out,
+		running:  &running,
 	}, nil
 }
 
+// Restart will restart (and optionally recompile) the htmlc Engine
+//
+// @compSrc: directory to compile (leave blank for no recompile)
+func (exs *ExsEngine) Restart(compSrc ...string) error {
+	exs.compMU.Lock()
+	defer exs.compMU.Unlock()
+
+	time.Sleep(250 * time.Millisecond)
+
+	*exs.running = false
+
+	time.Sleep(100 * time.Millisecond)
+
+	if len(compSrc) != 0 {
+		if err := Compile(compSrc[0], exs.filename); err != nil {
+			return err
+		}
+	}
+
+	engine, err := Engine(exs.filename)
+	if err != nil {
+		return err
+	}
+
+	exs.cmd = engine.cmd
+	exs.stdin = engine.stdin
+	exs.stdout = engine.stdout
+	exs.out = engine.out
+	exs.running = engine.running
+
+	time.Sleep(250 * time.Millisecond)
+
+	fmt.Println("htmlc engine restarted")
+
+	return nil
+}
+
 func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, error) {
+	exs.compMU.RLock()
+	defer exs.compMU.RUnlock()
+
 	if !*exs.running {
 		return []byte{}, ErrorStopped
 	}
@@ -171,6 +216,9 @@ func (exs *ExsEngine) Render(name string, args Map, layout ...string) ([]byte, e
 }
 
 func (exs *ExsEngine) Layout(name string, args Map, cont ...map[string]string) ([]byte, error) {
+	exs.compMU.RLock()
+	defer exs.compMU.RUnlock()
+
 	if !*exs.running {
 		return []byte{}, ErrorStopped
 	}
@@ -235,6 +283,9 @@ func (exs *ExsEngine) Layout(name string, args Map, cont ...map[string]string) (
 }
 
 func (exs *ExsEngine) Widget(name string, args Map) ([]byte, error) {
+	exs.compMU.RLock()
+	defer exs.compMU.RUnlock()
+
 	if !*exs.running {
 		return []byte{}, ErrorStopped
 	}
