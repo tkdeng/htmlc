@@ -43,7 +43,9 @@ func main() {
 	}
 
 	if out == "" {
-		goutil.JoinPath(src, filepath.Base(src)+".exs")
+		if path, err := goutil.JoinPath(src, filepath.Base(src)+".exs"); err == nil {
+			out = path
+		}
 	}
 
 	if out == "" {
@@ -71,7 +73,7 @@ func main() {
 	if port != "" {
 		if noCompile == "false" {
 			runServer(out, port, src)
-		}else{
+		} else {
 			runServer(out, port)
 		}
 	}
@@ -80,10 +82,10 @@ func main() {
 func runServer(file string, port string, liveSrc ...string) {
 	var exs *htmlc.ExsEngine
 	var err error
-	
+
 	if len(liveSrc) != 0 {
 		exs, err = htmlc.LiveEngine(liveSrc[0], file)
-	}else{
+	} else {
 		exs, err = htmlc.Engine(file)
 	}
 	if err != nil {

@@ -34,5 +34,5 @@ clean:
 	rm ./htmlc
 	sudo rm /usr/bin/htmlc
 
-test-fiver:
+test-fiber:
 	cd ./gofiber && go test
